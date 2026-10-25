@@ -1,92 +1,62 @@
 # Voz do Professor
 
-Plataforma de informação, autonomia e valorização docente. Reúne direitos e notícias, radar de escolas, oportunidades, escuta, pesquisas, alertas, perfil e administração.
+Site publicado: [Voz do Professor](https://amerindia.alwaysdata.net/voz-do-professor/).
 
-O projeto mantém a identidade do protótipo: fundo escuro, vermelho de destaque, cards arredondados e grade adaptativa de uma, duas ou três colunas. Inclui modo claro com preferência persistente, navegação por teclado e leitura em voz alta conforme suporte do navegador.
+Plataforma de informação docente com cards adaptativos, temas claro/escuro, catálogo público e administração privada. Versão 2: **sem contas de visitantes, sem upload e sem coleta de relatos ou respostas no servidor**.
 
-## Executar no computador
+## Rodar
 
-Requer **Node.js 24 ou superior**. Não precisa de serviço externo de banco de dados.
+Node.js 24+. `npm ci`, `npm run build`, `npm run dev`. Abra http://127.0.0.1:5173. O ambiente de desenvolvimento usa `data/demo-v2.sqlite` e exemplos identificados; fontes automáticas também podem trazer dados reais. `AUTO_SYNC=false` desativa conexões às fontes durante testes offline.
 
-```sh
-npm ci
-npm run dev
-```
+## O que fica no navegador
 
-Abra **http://127.0.0.1:5173**. O servidor de API roda na porta 3001. O ambiente de desenvolvimento usa `data/demo.sqlite`, com exemplos claramente identificados. São exemplos fictícios de escolas e seleções; não representam vagas ou notícias reais. As pesquisas demonstrativas coletam somente dados para teste.
+Preferências, região, favoritos e alertas lidos ficam no localStorage, com fallback em memória se estiver bloqueado. Não são enviados ao servidor. Busca, filtros, distância e comparação de alertas são processados localmente sobre o catálogo público. Geolocalização só é solicitada depois de um clique e suas coordenadas ficam no aparelho. Não há envio de e-mail, SMS ou push. Limpar o navegador perde essas preferências. Usuários do mesmo perfil de navegador podem vê-las.
 
-Para criar o primeiro administrador do ambiente de desenvolvimento:
+## Participação por PDF
 
-```powershell
-$env:DATABASE_PATH = 'data/demo.sqlite'
-npm run admin
-```
+Na área Voz do Professor há um PDF AcroForm preenchível: relato, sugestão, remoção/correção ou outros pedidos. Nome opcional, anonimato na publicação e autorização específica para publicar relato. O participante salva o documento localmente e envia pelo próprio e-mail; **o site não recebe o arquivo**. O remetente continuará visível ao administrador/provedor de e-mail.
 
-No Linux/macOS, use `DATABASE_PATH=data/demo.sqlite npm run admin`. Informe seu e-mail e seu nome público de curadoria. O comando gera uma senha aleatória e a mostra uma única vez. Nenhuma senha administrativa acompanha o repositório. Acesse **Meu Perfil** com essa conta; a opção **Gestão** aparecerá no menu.
+O endereço `relatos@exemplo.invalid` é propositalmente fictício e não recebe mensagens. Ao definir o endereço real, altere `REPORT_EMAIL` e gere o formulário novamente com `scripts/generate-forms.py --email endereco@dominio`. Isso é uma configuração inicial, não uma etapa por relato. Veja [formulário offline](docs/formulario-offline.md).
 
-## Módulos
+## Painel exclusivo do proprietário
 
-| Área                | Recursos                                                                                                                            |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Direitos e Notícias | Notícias, biblioteca normativa, piso salarial, carreira municipal, conselhos, explicadores, busca, histórico e fontes com curadoria |
-| Radar de Escolas    | Mapa, filtros por cidade/UF/rede/raio, perfil institucional, indicadores, favoritos e recrutamento verificado                       |
-| Oportunidades       | Concursos, temporários, seleções privadas, reserva, filtros profissionais, remuneração, calendário, ICS, edital e alertas           |
-| Voz do Professor    | Relatos anônimos, sugestões, enquetes, seis temas de pesquisa, painel coletivo e relatórios protegidos                              |
-| Conta               | Cadastro gratuito opcional, perfil, região, preferências, notificações, favoritos, exportação e exclusão de dados                   |
-| Gestão              | Rascunhos, revisão humana, publicação, arquivamento reversível, importações, qualidade, pesquisas, métricas e histórico             |
+**Estado da publicação Alwaysdata:** painel implementado e testado localmente; acesso remoto ainda pendente porque os servidores SSH e HTTP são separados. O painel não está exposto à internet. Veja [operação](docs/operacao.md).
 
-A [matriz de requisitos](docs/requisitos.md) relaciona **cada um dos 66 itens do PDF** à implementação e à forma de conferência.
+Não existe botão nem link administrativo no site. O serviço privado escuta somente em `127.0.0.1:3002`, separado da porta pública. Rode `npm run admin` uma única vez para criar o proprietário (sem e-mail, senha aleatória, hash scrypt). No desenvolvimento, defina antes `$env:DATABASE_PATH='data/demo-v2.sqlite'` no PowerShell. Em produção, use o banco configurado em `.env`.
 
-## Organização do código
+Abra http://127.0.0.1:3002 no computador do servidor ou use túnel SSH. O painel permite adicionar/revisar/publicar/retirar relatos, corrigir registros públicos, consultar sincronizações e ligar/desligar cada ferramenta. Há botões de habilitar/desabilitar todas. Desabilitar todas esvazia o conteúdo; o cabeçalho permanece. O bloqueio do catálogo também ocorre no servidor.
 
-```text
-src/
-  app.js                  navegação, sessão, tema e ações comuns
-  api.js                  comunicação com a API e estado de interface
-  ui.js                   componentes e escape de conteúdo
-  styles.css              identidade visual e responsividade
-  modules/                catálogo, escuta, perfil, gestão e transparência
-server/
-  app.js                  API HTTP e proteção de requisições
-  db.js                   esquema SQLite e consultas comuns
-  domain.js               validações e regras de negócio
-  security.js             senhas, sessões, CSRF e criptografia
-  modules/                contas, pesquisas, gestão e importações
-scripts/                  execução, administrador, importação, backup e checks
-tests/                    testes de domínio e integração HTTP
-docs/                     requisitos, operação, fontes e protótipo preservado
-.github/workflows/ci.yml   validação em cada push e pull request
-```
+Não publique a porta administrativa no proxy. Apenas conhecer um endereço não concede acesso: há senha, cookie HttpOnly, CSRF, validação de origem e limite de tentativas. Só há uma conta de proprietário. O e-mail e PDFs recebidos ficam fora desta aplicação; cadastre apenas o texto autorizado para publicação.
 
-O protótipo original está preservado em `docs/prototipo-original.html`. Seus antigos dados fictícios não são publicados como informações verificadas.
+## Atualizações automáticas, sem IA
 
-## Testar e construir
+- Agência Brasil/EBC e GOV.UK: títulos, datas, fonte e link. Primeiro parágrafo próprio da EBC com autoria; fotos apenas quando o crédito principal identifica Agência Brasil/EBC, sem parceiros ou direitos reservados. Cache local de até 60 fotos, 1,5 MB cada; o visitante não conecta ao provedor da imagem.
+- GDELT: metadados globais complementares; falhas preservam o catálogo. País é o país do veículo. Não há garantia de notícia em cada país/cidade.
+- Legislação: referências ECA, LDB e BNCC; monitoramento diário das fontes oficiais. API ALEAC para normas educacionais estaduais. LexML federal/estadual integrado, mas indisponível na validação por verificação de segurança. Não há cobertura completa de todos os estados; falhas e datas aparecem no painel.
+- Estado/cidade: correspondência textual determinística no título, usando nomes IBGE. Casos ambíguos ficam sem classificação; isso é indicado no filtro.
+- Jobicy e Remotive: anúncios de educação/formação com atribuição e link. Os limites das fontes são respeitados (6h entre consultas). Não inventamos prazos, salários ou vínculo entre CNPJ e empresa anunciante.
+- CNPJ: Python padrão, leitura HTTP Range de arquivos oficiais da Receita, estabelecimentos ativos com CNAE 85. Em hospedagem pequena, até 500 registros por lote diário, 24 MB comprimidos, 120 s e catálogo máximo de 3000. **É cobertura parcial**, com rodízio entre os dez arquivos. Não baixamos o arquivo nacional completo nem coletamos QSA, CPF, e-mail ou telefone. Ative `RFB_SYNC=true` em produção.
+- No detalhe da instituição, o site busca vagas de mesmo nome no catálogo das APIs. Coincidência de nome não é prova de vínculo com o CNPJ. Não há rastreamento irrestrito de sites, acesso privado ou garantia de achar todas as vagas.
 
-```sh
-npm run check
-npm test
-npm run build
-npm audit
-```
+[Fontes, licenças e limites](docs/automacao.md). [Matriz dos 66 itens e alterações expressas](docs/requisitos.md).
 
-Os testes usam bancos em memória e contas fictícias. Conferem permissões, CSRF, sessão, isolamento de favoritos e notificações, revisão humana, filtros, alertas, importação, criptografia, supressão estatística e exclusão por comprovante. A interface é compilada para `dist/`, servida pelo mesmo processo da API em produção.
+## Publicação sem cobrança
 
-## Publicação em servidor
+Preparado para Node 24 + SQLite no Alwaysdata Free. O plano gratuito atualmente tem 1 GB de disco e 256 MB de RAM, é para uso não lucrativo e restringe endereços ao subdomínio alwaysdata.net da conta. Não configure upgrade, cartão ou serviços externos pagos. Esses limites exigem catálogo e sincronização limitados. O fornecedor pode alterar regras; não há garantia técnica de gratuidade eterna ou disponibilidade 100%.
 
-O GitHub guarda o código. **GitHub Pages sozinho não executa este sistema**, pois contas, SQLite, importações e pesquisas precisam do servidor Node.js.
+O código usa um único processo Node para público e painel local. `PORT`/`HOST` devem seguir o proxy; `ADMIN_PORT` fica em loopback. `BASE_PATH` e `VITE_BASE_PATH` permitem hospedar em subpasta sem substituir outro site. Detalhes em [Operação](docs/operacao.md).
 
-1. Execute `npm ci` e `npm run build`.
-2. Copie `.env.example` para `.env` e configure a URL HTTPS, o contato de privacidade e uma chave de criptografia de 32 bytes. Use um banco novo, separado da demonstração.
-3. Crie o administrador com `npm run admin` apontando para o mesmo banco de produção.
-4. Execute `npm start` atrás de um proxy HTTPS e mantenha `data/` em volume persistente.
-5. Importe as bases oficiais e publique somente os registros conferidos por uma pessoa responsável.
+## Validação e módulos
 
-Há um `Dockerfile` para essa execução. Instruções de configuração, backup, restauração e operação estão em [Operação](docs/operacao.md).
+`npm run check`, `npm test`, `npm run build`, `python -m unittest discover -s tests -p "*_test.py"`, `npm audit --omit=dev`.
 
-## Dados reais e limites operacionais
+- `src/`: interface pública e painel com entradas separadas.
+- `shared/`: filtros e configuração de ferramentas.
+- `server/app.js`: serviço público somente leitura e serviço privado separado.
+- `server/modules/automation.js`: integrações permitidas, limites e cache de catálogo.
+- `scripts/rfb-sync.py`: descoberta CNAE com orçamento estrito de recursos.
+- `public/formularios/`: PDF que não envia dados ao site.
 
-As funcionalidades estão implementadas, mas a instalação não vem com o cadastro nacional de escolas nem com uma redação que valide notícias e editais automaticamente. O importador aceita arquivos da Receita, Censo e CSVs normalizados; o agendador reprocessa as fontes locais configuradas. Downloads nacionais, adequação ao leiaute da edição utilizada e conferência editorial são responsabilidades operacionais descritas em [Importações](docs/importacoes.md).
+Bancos antigos da versão 1 não são migrados nem publicados automaticamente. O banco padrão novo é `data/public-v2.sqlite`; arquivos de teste/desenvolvimento ficam ignorados no Git. Font Awesome Free (ícones gratuitos) é compilado localmente; grade/lista e tema são preferências do navegador.
 
-Alertas são entregues na central interna da plataforma. Não há envio de e-mail, SMS ou WhatsApp. Mapa depende do OpenStreetMap; leitura em voz alta depende das vozes do navegador. Relatórios podem ser baixados em CSV/JSON e impressos ou salvos como PDF pelo navegador.
-
-Antes de abrir ao público, configure o responsável pelo tratamento de dados, retenção e contato; carregue fontes reais e valide o fluxo com professores. As proteções técnicas não substituem a governança de uma pesquisa ou uma avaliação jurídica de conformidade.
+Relatos publicados e credenciais administrativas continuam sendo dados do servidor. Sem login público não significa invulnerabilidade; configure também logs/retenção na hospedagem.

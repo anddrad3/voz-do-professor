@@ -1,11 +1,4 @@
-import {
-  randomBytes,
-  scrypt as scryptCallback,
-  timingSafeEqual,
-  createHash,
-  createCipheriv,
-  createDecipheriv,
-} from 'node:crypto';
+import { randomBytes, scrypt as scryptCallback, timingSafeEqual, createHash } from 'node:crypto';
 import { promisify } from 'node:util';
 const scrypt = promisify(scryptCallback);
 export const token = () => randomBytes(32).toString('hex');
@@ -15,37 +8,10 @@ export async function passwordHash(password) {
   return `${salt}:${(await scrypt(password, salt, 64)).toString('hex')}`;
 }
 export async function passwordMatches(password, stored) {
-  const [salt, key] = stored.split(':');
+  const [salt, key] = String(stored || '').split(':');
   const actual = await scrypt(password, salt, 64);
-  return timingSafeEqual(actual, Buffer.from(key, 'hex'));
-}
-export function encryption(db, provided = process.env.DATA_ENCRYPTION_KEY) {
-  if (process.env.NODE_ENV === 'production' && !provided)
-    throw new Error('DATA_ENCRYPTION_KEY é obrigatória em produção.');
-  let key =
-    provided ||
-    db.prepare("SELECT value FROM metadata WHERE key='dev-encryption-key'").get()?.value;
-  if (!key) {
-    key = token();
-    db.prepare('INSERT INTO metadata VALUES(?,?)').run('dev-encryption-key', key);
-  }
-  if (!/^[a-f0-9]{64}$/i.test(key))
-    throw new Error('DATA_ENCRYPTION_KEY deve ter 64 caracteres hexadecimais.');
-  const binary = Buffer.from(key, 'hex');
-  return {
-    encrypt(text) {
-      const iv = randomBytes(12);
-      const c = createCipheriv('aes-256-gcm', binary, iv);
-      const data = Buffer.concat([c.update(text, 'utf8'), c.final()]);
-      return `${iv.toString('hex')}:${c.getAuthTag().toString('hex')}:${data.toString('hex')}`;
-    },
-    decrypt(text) {
-      const [iv, tag, data] = text.split(':');
-      const c = createDecipheriv('aes-256-gcm', binary, Buffer.from(iv, 'hex'));
-      c.setAuthTag(Buffer.from(tag, 'hex'));
-      return Buffer.concat([c.update(Buffer.from(data, 'hex')), c.final()]).toString('utf8');
-    },
-  };
+  const expected = Buffer.from(key || '', 'hex');
+  return expected.length === actual.length && timingSafeEqual(actual, expected);
 }
 export function sessionMiddleware(db) {
   return (req, res, next) => {
@@ -56,19 +22,17 @@ export function sessionMiddleware(db) {
       ?.slice(12);
     if (raw) {
       const session = db
-        .prepare('SELECT * FROM sessions WHERE token=? AND expires>?')
+        .prepare('SELECT * FROM admin_sessions WHERE token=? AND expires>?')
         .get(hash(raw), Date.now());
       if (session) {
         req.session = session;
-        req.user = db.prepare('SELECT * FROM users WHERE id=?').get(session.user_id);
+        req.user = db
+          .prepare("SELECT *, 'admin' AS role FROM admin_users WHERE id=?")
+          .get(session.user_id);
       }
     }
     next();
   };
-}
-export function requireUser(req, res, next) {
-  if (!req.user) return res.status(401).json({ error: 'Entre na sua conta para continuar.' });
-  next();
 }
 export function requireAdmin(req, res, next) {
   if (req.user?.role !== 'admin')
@@ -99,15 +63,3 @@ export function limiter(limit = 30, windowMs = 60000) {
     next();
   };
 }
-export const publicUser = (u) =>
-  u
-    ? {
-        id: u.id,
-        name: u.name,
-        email: u.email,
-        role: u.role,
-        profile: JSON.parse(u.profile),
-        preferences: JSON.parse(u.preferences),
-        consentAt: u.consent_at,
-      }
-    : null;

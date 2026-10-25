@@ -5,13 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta name="theme-color" content="#09090b" />
     <meta name="description" content="Informação, autonomia e valorização docente." />
-    <link rel="icon" href="/logo.png" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
+    <link rel="icon" href="%BASE_URL%logo.png" />
     <title>Voz do Professor</title>
     <script type="module" src="/src/app.js"></script>
   </head>
@@ -20,11 +14,9 @@
     <div class="glow" aria-hidden="true"></div>
     <header class="header">
       <div class="header-inner">
-        <a class="brand" href="#/inicio"
-          ><img src="/logo.png" alt="" width="36" height="36" /><span
-            >Voz do Professor<small>Informação que valoriza.</small></span
-          ></a
-        >
+        <a class="brand" href="#/inicio" aria-label="Voz do Professor - página inicial"
+          ><img src="%BASE_URL%logo.png" alt="Voz do Professor" width="180" height="100"
+        /></a>
         <div class="header-actions">
           <button class="icon-button" data-action="search" aria-label="Buscar na plataforma">
             <i data-lucide="search"></i></button
@@ -39,7 +31,7 @@
             ><i data-lucide="bell"></i
             ><span id="notification-count" class="notification-count" hidden></span></a
           ><a class="account-link" href="#/perfil" id="account-link"
-            ><i data-lucide="user-round"></i><span>Entrar</span></a
+            ><i data-fa="chalkboard-user"></i><span>Minha Sala de Aula</span></a
           >
         </div>
       </div>

@@ -1,26 +1,23 @@
 import { existsSync } from 'node:fs';
 import { createInterface } from 'node:readline/promises';
-import { randomUUID } from 'node:crypto';
-import { openDatabase, now } from '../server/db.js';
+import { randomUUID, randomBytes } from 'node:crypto';
+import { openDatabase } from '../server/db.js';
 import { passwordHash } from '../server/security.js';
 if (existsSync('.env')) process.loadEnvFile('.env');
-const rl = createInterface({ input: process.stdin, output: process.stdout });
-const email = (await rl.question('E-mail do administrador: ')).trim().toLowerCase();
-const name = (await rl.question('Nome público do responsável pela curadoria: ')).trim();
-console.log(
-  'A senha será criada automaticamente e exibida uma única vez. Guarde-a em um gerenciador de senhas.',
-);
-rl.close();
-if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || name.length < 2)
-  throw new Error('E-mail ou nome inválido.');
 const db = openDatabase();
-if (db.prepare('SELECT 1 FROM users WHERE email=?').get(email))
-  throw new Error(
-    'Conta já existe. Use o comando SQL documentado para promover uma conta sob controle do operador.',
-  );
-const password = randomUUID() + randomUUID().slice(0, 8);
-db.prepare(
-  "INSERT INTO users(id,email,name,password,role,consent_at,created_at) VALUES(?,?,?,?,'admin',?,?)",
-).run(randomUUID(), email, name, await passwordHash(password), now(), now());
+if (db.prepare('SELECT 1 FROM admin_users').get())
+  throw new Error('Já existe um proprietário. Nenhuma segunda conta foi criada.');
+const rl = createInterface({ input: process.stdin, output: process.stdout });
+const name =
+  (await rl.question('Nome público do responsável (ou Administração): ')).trim() || 'Administração';
+rl.close();
+const password = randomBytes(24).toString('base64url');
+db.prepare('INSERT INTO admin_users VALUES(?,?,?)').run(
+  randomUUID(),
+  name,
+  await passwordHash(password),
+);
 db.close();
-console.log(`Administrador criado. Senha inicial: ${password}`);
+console.log(
+  `Painel local: http://127.0.0.1:3002\nSenha: ${password}\nGuarde no seu gerenciador de senhas. Não há cadastro de visitantes.`,
+);

@@ -2,24 +2,32 @@ import express from 'express';
 import helmet from 'helmet';
 import { resolve } from 'node:path';
 import { ZodError } from 'zod';
-import { encryption, sessionMiddleware, csrf, limiter } from './security.js';
+import { sessionMiddleware, csrf, limiter } from './security.js';
 import { records, unpack } from './db.js';
-import { filterRecords } from './domain.js';
-import { accounts } from './modules/accounts.js';
-import { research } from './modules/research.js';
+import { filterRecords } from '../shared/filter.js';
+import { featureForKind } from '../shared/features.js';
+import { settings } from './modules/settings.js';
 import { admin } from './modules/admin.js';
-export function createApp(db, { staticDir = resolve('dist'), encryptionKey } = {}) {
-  const app = express(),
-    crypto = encryption(db, encryptionKey);
+import { adminAuth } from './modules/admin-auth.js';
+import { mediaDirectory } from './modules/news-media.js';
+function foundation() {
+  const app = express();
   app.disable('x-powered-by');
+  const prefix = (process.env.BASE_PATH || '').replace(/\/$/, '');
+  if (prefix)
+    app.use((req, res, next) => {
+      if (req.url === prefix) return res.redirect(308, prefix + '/');
+      if (req.url.startsWith(prefix + '/')) req.url = req.url.slice(prefix.length);
+      next();
+    });
   app.use(
     helmet({
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
           scriptSrc: ["'self'"],
-          styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-          fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          fontSrc: ["'self'"],
           imgSrc: ["'self'", 'data:', 'https://*.tile.openstreetmap.org'],
           connectSrc: ["'self'"],
           objectSrc: ["'none'"],
@@ -31,105 +39,122 @@ export function createApp(db, { staticDir = resolve('dist'), encryptionKey } = {
       strictTransportSecurity: process.env.NODE_ENV === 'production',
     }),
   );
-  app.use('/api', limiter(300));
   app.use('/api', (req, res, next) => {
     res.set('Cache-Control', 'no-store');
-    if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
-      const allowed = new Set([process.env.APP_ORIGIN || 'http://localhost:3001']);
-      if (process.env.NODE_ENV !== 'production') {
-        allowed.add('http://localhost:5173');
-        allowed.add('http://127.0.0.1:5173');
-        allowed.add('http://127.0.0.1:3001');
-      }
-      if (req.headers.origin && !allowed.has(req.headers.origin))
-        return res.status(403).json({ error: 'Origem não autorizada.' });
-      if (!req.is('application/json')) return res.status(415).json({ error: 'Envie JSON.' });
-    }
     next();
   });
-  app.use(express.json({ limit: '12mb' }), sessionMiddleware(db), csrf);
-  app.get('/api/health', (req, res) =>
-    res.json({ ok: true, database: db.prepare('SELECT 1 n').get().n === 1 }),
-  );
-  app.get('/api/config', (req, res) =>
-    res.json({
-      demo: process.env.DEMO_MODE === 'true',
-      privacyContact: process.env.PRIVACY_CONTACT || '',
-      minimumGroup: 10,
-    }),
-  );
-  app.use('/api/account', accounts(db));
-  app.use('/api/research', research(db, crypto));
-  app.use('/api/admin', admin(db, crypto));
-  app.get('/api/records/:kind', (req, res) => {
-    if (!['content', 'school', 'opportunity', 'survey'].includes(req.params.kind))
-      return res.status(404).json({ error: 'Área não encontrada.' });
-    const all = records(db, req.params.kind)
-      .filter((r) => !r.demo || process.env.DEMO_MODE === 'true')
-      .filter((r) => r.kind !== 'school' || r.active);
-    res.json(filterRecords(all, req.query));
-  });
-  app.get('/api/record/:id', (req, res) => {
-    const item = unpack(
-      db.prepare("SELECT * FROM records WHERE id=? AND status='published'").get(req.params.id),
-    );
-    if (!item || (item.demo && process.env.DEMO_MODE !== 'true'))
-      return res.status(404).json({ error: 'Registro não encontrado ou aguardando revisão.' });
-    res.json(filterRecords([item], {})[0]);
-  });
-  app.get('/api/history/:id', (req, res) => {
-    const visible = db
-      .prepare("SELECT * FROM records WHERE id=? AND status='published'")
-      .get(req.params.id);
-    if (!visible || (visible.demo && process.env.DEMO_MODE !== 'true'))
-      return res.status(404).json({ error: 'Registro indisponível.' });
-    res.json(
-      db
-        .prepare(
-          "SELECT actor,action,created_at,data FROM revisions WHERE record_id=? AND action='published' ORDER BY id DESC",
-        )
-        .all(req.params.id)
-        .map((r) => ({
-          reviewer: r.actor,
-          date: r.created_at,
-          title: JSON.parse(r.data).title,
-          sourceUrl: JSON.parse(r.data).sourceUrl,
-          summary: JSON.parse(r.data).summary || '',
-        })),
-    );
-  });
-  app.get('/api/territories', (req, res) =>
-    res.json(
-      [
-        ...new Set(
-          records(db, 'school')
-            .filter((s) => s.active && (!s.demo || process.env.DEMO_MODE === 'true'))
-            .map((s) => `${s.city} / ${s.state}`),
-        ),
-      ].sort(),
-    ),
-  );
-  app.use('/api', (req, res) => res.status(404).json({ error: 'Rota não encontrada.' }));
-  app.use(express.static(staticDir, { index: false }));
-  app.get('/{*path}', (req, res, next) => {
-    const day = new Date().toISOString().slice(0, 10);
-    db.prepare(
-      'INSERT INTO metrics(day,requests) VALUES(?,1) ON CONFLICT(day) DO UPDATE SET requests=requests+1',
-    ).run(day);
-    res.sendFile(resolve(staticDir, 'index.html'), (err) => {
-      if (err) next(err);
-    });
-  });
+  return app;
+}
+function errors(app) {
   app.use((error, req, res, next) => {
     if (error instanceof ZodError)
       return res
         .status(400)
         .json({ error: error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ') });
     const status = error.status || 500;
-    if (status >= 500) console.error('Falha interna:', error.message);
-    res.status(status).json({
-      error: status >= 500 ? 'Não foi possível concluir. Tente novamente.' : error.message,
-    });
+    res
+      .status(status)
+      .json({ error: status >= 500 ? 'Não foi possível concluir a operação.' : error.message });
   });
   return app;
+}
+export function createApp(db, { staticDir = resolve('dist') } = {}) {
+  const app = foundation();
+  // Public service is read-only: no cookies, identities, uploads, account routes or body parser.
+  app.use((req, res, next) => {
+    if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method))
+      return res.status(405).json({ error: 'Este site não recebe dados de visitantes.' });
+    next();
+  });
+  const allowed = (r) =>
+    r &&
+    settings(db).features[featureForKind(r.kind)] &&
+    (!r.demo || process.env.DEMO_MODE === 'true') &&
+    (r.kind !== 'school' || r.active);
+  app.get('/api/health', (req, res) => res.json({ ok: true }));
+  app.get('/media/:file', (req, res) => {
+    if (
+      !settings(db).features.content ||
+      !/^[a-f0-9]{40}\.jpg$/.test(req.params.file) ||
+      !db
+        .prepare(
+          "SELECT 1 FROM records WHERE status='published' AND kind='content' AND demo=0 AND json_extract(data,'$.image')=?",
+        )
+        .get(req.params.file)
+    )
+      return res.sendStatus(404);
+    res.set('Cache-Control', 'public, max-age=3600');
+    res.sendFile(resolve(mediaDirectory(), req.params.file));
+  });
+  app.get('/api/config', (req, res) =>
+    res.json({ ...settings(db), demo: process.env.DEMO_MODE === 'true' }),
+  );
+  app.get('/api/records/:kind', (req, res) => {
+    if (!['content', 'school', 'opportunity', 'survey', 'story'].includes(req.params.kind))
+      return res.status(404).json({ error: 'Área não encontrada.' });
+    // Same public dataset for everyone; preferences and coordinates are never needed here.
+    res.json(filterRecords(records(db, req.params.kind).filter(allowed), {}));
+  });
+  app.get('/api/record/:id', (req, res) => {
+    const r = unpack(
+      db.prepare("SELECT * FROM records WHERE id=? AND status='published'").get(req.params.id),
+    );
+    if (!allowed(r)) return res.status(404).json({ error: 'Publicação indisponível.' });
+    res.json(filterRecords([r], {})[0]);
+  });
+  app.get('/api/history/:id', (req, res) => {
+    const r = unpack(
+      db.prepare("SELECT * FROM records WHERE id=? AND status='published'").get(req.params.id),
+    );
+    if (!allowed(r)) return res.status(404).json({ error: 'Publicação indisponível.' });
+    res.json(
+      db
+        .prepare(
+          "SELECT actor,created_at,data FROM revisions WHERE record_id=? AND action='published' ORDER BY id DESC LIMIT 20",
+        )
+        .all(r.id)
+        .map((v) => ({
+          reviewer: v.actor,
+          date: v.created_at,
+          title: JSON.parse(v.data).title,
+          sourceUrl: JSON.parse(v.data).sourceUrl,
+          summary: JSON.parse(v.data).summary || '',
+        })),
+    );
+  });
+  app.use('/api', (req, res) => res.status(404).json({ error: 'Rota não encontrada.' }));
+  app.use((req, res, next) => {
+    if (/^\/(admin(?:\.html)?|gestao)(\/|$)/.test(req.path)) return res.sendStatus(404);
+    if (
+      req.path.startsWith('/formularios/') &&
+      !settings(db).features.voice &&
+      !settings(db).features.survey
+    )
+      return res.sendStatus(404);
+    next();
+  });
+  app.use(express.static(staticDir, { index: false }));
+  app.get('/{*path}', (req, res) => res.sendFile(resolve(staticDir, 'index.html')));
+  return errors(app);
+}
+export function createAdminApp(db, { staticDir = resolve('dist'), automation } = {}) {
+  const app = foundation();
+  app.use('/api/admin', limiter(120));
+  app.use('/api/admin', (req, res, next) => {
+    if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+      const origin = process.env.ADMIN_ORIGIN || 'http://127.0.0.1:3002';
+      if (req.headers.origin && req.headers.origin !== origin)
+        return res.status(403).json({ error: 'Origem não autorizada.' });
+      if (!req.is('application/json')) return res.sendStatus(415);
+    }
+    next();
+  });
+  app.use(express.json({ limit: '100kb' }), sessionMiddleware(db), csrf);
+  app.use('/api/admin/auth', adminAuth(db));
+  app.use('/api/admin', admin(db, { automation }));
+  app.use('/api', (req, res) => res.sendStatus(404));
+  app.use('/assets', express.static(resolve(staticDir, 'assets')));
+  app.get('/logo.png', (req, res) => res.sendFile(resolve(staticDir, 'logo.png')));
+  app.get('/', (req, res) => res.sendFile(resolve(staticDir, 'admin.html')));
+  return errors(app);
 }

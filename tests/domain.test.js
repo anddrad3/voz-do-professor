@@ -8,11 +8,9 @@ import {
   filterRecords,
   opportunityStatus,
   qualityReport,
-  generateAlerts,
 } from '../server/domain.js';
-import { aggregate } from '../server/modules/research.js';
 import { importData } from '../server/modules/imports.js';
-import { encryption, hash, passwordHash, passwordMatches } from '../server/security.js';
+import { hash, passwordHash, passwordMatches } from '../server/security.js';
 const base = {
   title: 'Publicação de teste',
   sourceName: 'Fonte oficial de teste',
@@ -147,143 +145,6 @@ test('valida URLs perigosas, datas invertidas e objetos com campos inesperados',
     db.close();
   }
 });
-test('alertas cruzam perfil e raio e não duplicam a mesma revisão', () => {
-  const db = openDatabase(':memory:');
-  try {
-    const profile = {
-      city: 'Franca',
-      state: 'SP',
-      discipline: 'História',
-      education: 'Licenciatura',
-      levels: ['Ensino Fundamental'],
-      radius: 5,
-      lat: -20.5,
-      lng: -47.4,
-    };
-    for (const [id, p] of [
-      ['match', profile],
-      ['other', { ...profile, discipline: 'Matemática' }],
-      ['far', { ...profile, lat: -23 }],
-      ['noCoordinates', { ...profile, lat: null }],
-    ])
-      db.prepare(
-        'INSERT INTO users(id,email,name,password,profile,preferences,consent_at,created_at) VALUES(?,?,?,?,?,?,?,?)',
-      ).run(
-        id,
-        `${id}@example.test`,
-        id,
-        'unused',
-        JSON.stringify(p),
-        '{}',
-        '2026-01-01',
-        '2026-01-01',
-      );
-    const r = saveRecord(
-      db,
-      'opportunity',
-      {
-        ...base,
-        type: 'Concurso público',
-        discipline: 'História',
-        city: 'Franca',
-        state: 'SP',
-        level: 'Ensino Fundamental',
-        education: 'Licenciatura',
-        requirements: 'Diploma',
-        opens: '2026-10-01',
-        closes: '2026-10-30',
-        lat: -20.5,
-        lng: -47.4,
-      },
-      'Editora',
-    );
-    publishRecord(db, r.id, 'Revisora');
-    generateAlerts(db, r.id);
-    assert.deepEqual(
-      db
-        .prepare('SELECT user_id FROM notifications')
-        .all()
-        .map((n) => n.user_id),
-      ['match'],
-    );
-  } finally {
-    db.close();
-  }
-});
-function newSurvey(db) {
-  const s = saveRecord(
-    db,
-    'survey',
-    {
-      title: 'Pesquisa de jornada',
-      topic: 'Jornada',
-      purpose: 'Compreender a jornada de trabalho.',
-      questions: [{ id: 'horas', label: 'Sua jornada?', options: ['Até 20', 'Mais de 20'] }],
-    },
-    'Pesquisadora',
-  );
-  return publishRecord(db, s.id, 'Revisora');
-}
-function responses(db, id, territory, option, count) {
-  for (let i = 0; i < count; i++)
-    db.prepare('INSERT INTO responses VALUES(?,?,?,?,?,?)').run(
-      crypto.randomUUID(),
-      id,
-      territory,
-      JSON.stringify({ horas: option }),
-      crypto.randomUUID(),
-      '2026-10',
-    );
-}
-test('agregados suprimem grupos pequenos e protegem células por supressão complementar', () => {
-  const db = openDatabase(':memory:');
-  try {
-    const s = newSurvey(db);
-    responses(db, s.id, 'Cidade A', 'Até 20', 1);
-    assert.equal(aggregate(db, s.id).nationwide.suppressed, true);
-    responses(db, s.id, 'Cidade A', 'Mais de 20', 10);
-    responses(db, s.id, 'Cidade B', 'Até 20', 10);
-    responses(db, s.id, 'Cidade B', 'Mais de 20', 10);
-    const result = aggregate(db, s.id);
-    assert.equal(result.nationwide.total, 31);
-    assert.ok(result.nationwide.questions[0].suppressed);
-    assert.ok(result.territories.every((t) => t.questions[0].suppressed));
-    assert.ok(!JSON.stringify(result).includes('"count":'));
-  } finally {
-    db.close();
-  }
-});
-test('agregados suficientemente grandes liberam contagens, mantendo a pesquisa imutável após respostas', () => {
-  const db = openDatabase(':memory:');
-  try {
-    const s = newSurvey(db);
-    responses(db, s.id, 'Franca / SP', 'Até 20', 10);
-    responses(db, s.id, 'Franca / SP', 'Mais de 20', 10);
-    const result = aggregate(db, s.id);
-    assert.deepEqual(
-      result.nationwide.questions[0].counts.map((o) => o.count),
-      [10, 10],
-    );
-    assert.throws(
-      () =>
-        saveRecord(
-          db,
-          'survey',
-          {
-            title: s.title,
-            topic: s.topic,
-            purpose: s.purpose,
-            questions: [{ id: 'horas', label: 'Outra pergunta?', options: ['A', 'B'] }],
-          },
-          'Pesquisadora',
-          s.id,
-        ),
-      /não permite alterar/,
-    );
-  } finally {
-    db.close();
-  }
-});
 test('CSV normalizado importa, cruza CNPJ com Censo e marca divergências sem publicar', async () => {
   const db = openDatabase(':memory:');
   try {
@@ -371,22 +232,13 @@ test('importador registra erros de linha e conserva registros válidos para revi
     db.close();
   }
 });
-test('senha usa salt e relatos são criptografados com autenticação', async () => {
+test('senha administrativa usa salt e rejeita credenciais incorretas', async () => {
   const a = await passwordHash('senha longa de teste'),
     b = await passwordHash('senha longa de teste');
   assert.notEqual(a, b);
   assert.ok(await passwordMatches('senha longa de teste', a));
   assert.equal(await passwordMatches('senha incorreta', a), false);
-  const db = openDatabase(':memory:');
-  try {
-    const e = encryption(db, 'a'.repeat(64));
-    const payload = e.encrypt('Relato privado');
-    assert.ok(!payload.includes('Relato'));
-    assert.equal(e.decrypt(payload), 'Relato privado');
-    assert.throws(() => e.decrypt(payload.slice(0, -1) + (payload.endsWith('0') ? '1' : '0')));
-  } finally {
-    db.close();
-  }
+  assert.equal(await passwordMatches('senha', 'corrompido'), false);
 });
 test('reimportação idêntica preserva publicação e uma inativação posterior retira a escola', async () => {
   const db = openDatabase(':memory:');

@@ -1,398 +1,209 @@
-import { api, state } from '../api.js';
+import '../styles.css';
 import {
   h,
   heading,
-  icon,
   field,
-  select,
   textarea,
   check,
+  select,
   notice,
-  empty,
-  dialog,
   toast,
-  fmtDate,
-  download,
-  csv,
+  refreshIcons,
+  dialog,
+  empty,
   external,
 } from '../ui.js';
-import { TYPES, LEVELS, STATES, OPPORTUNITY_TYPES } from './catalog.js';
+import { FEATURES } from '../../shared/features.js';
+let session = null,
+  csrf = null,
+  tab = 'story',
+  items = [],
+  editing = null,
+  config = null;
+async function request(path, body, method = 'POST') {
+  const r = await fetch(`${import.meta.env.BASE_URL}api/admin${path}`, {
+    method: body === undefined ? 'GET' : method,
+    headers: { 'Content-Type': 'application/json', ...(csrf ? { 'X-CSRF-Token': csrf } : {}) },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  let value;
+  try {
+    value = await r.json();
+  } catch {
+    throw new Error('Painel indisponível. Confira a conexão privada.');
+  }
+  if (!r.ok) throw new Error(value.error || 'Operação recusada.');
+  return value;
+}
 const tabs = [
+  ['story', 'Relatos'],
+  ['features', 'Ferramentas'],
+  ['automation', 'Automação'],
   ['content', 'Notícias e direitos'],
   ['school', 'Instituições'],
-  ['opportunity', 'Editais'],
+  ['opportunity', 'Oportunidades'],
   ['survey', 'Pesquisas'],
-  ['imports', 'Importações'],
-  ['quality', 'Qualidade'],
-  ['submissions', 'Escuta'],
-  ['statistics', 'Indicadores'],
-  ['privacy', 'Privacidade'],
 ];
-const topics = [
-  'Enquete',
-  'Jornada',
-  'Vínculos',
-  'Remuneração',
-  'Infraestrutura',
-  'Materiais didáticos',
-  'Inteligência artificial',
-];
-const recordFields = {
-  content: ['type', 'summary', 'level', 'salary', 'year', 'hours', 'history'],
-  school: [
-    'cnpj',
-    'inepCode',
-    'cnae',
-    'network',
-    'address',
-    'phone',
-    'website',
-    'recruitmentUrl',
-    'recruitmentVerified',
-    'lat',
-    'lng',
-    'active',
-    'crosscheck',
-    'provenance',
-  ],
-  opportunity: [
-    'type',
-    'discipline',
-    'level',
-    'education',
-    'salary',
-    'hours',
-    'opens',
-    'closes',
-    'examDate',
-    'stage',
-    'registrationUrl',
-    'requirements',
-    'documents',
-    'lat',
-    'lng',
-  ],
-  survey: ['topic', 'purpose', 'closes', 'questions'],
-};
-const baseFields = [
-  'title',
-  'body',
-  'city',
-  'state',
-  'sourceName',
-  'sourceUrl',
-  'sourceDate',
-  'tags',
-];
-function editForm(kind, record = {}) {
-  const v = (key, def = '') => record[key] ?? def;
-  let extra = '';
-  if (kind === 'content')
-    extra =
-      select('type', 'Tipo de informação', TYPES, v('type', 'Notícia'), false) +
-      select('level', 'Nível de ensino', LEVELS, v('level', 'Todos'), false) +
-      textarea('summary', 'Explicador em linguagem simples', v('summary')) +
-      field('salary', 'Piso / remuneração (R$)', v('salary'), 'number', 'step="0.01" min="0"') +
-      field('year', 'Ano de referência', v('year'), 'number', 'min="1900" max="2200"') +
-      field('hours', 'Jornada semanal (horas)', v('hours'), 'number', 'min="1" max="80"') +
-      textarea(
-        'history',
-        'Mudanças na norma: uma por linha (data | descrição | link oficial)',
-        v('history', [])
-          .map((i) => `${i.date} | ${i.description} | ${i.sourceUrl}`)
-          .join('\n'),
-        'placeholder="2026-01-01 | Descrição da alteração | https://..."',
-      );
-  if (kind === 'school')
-    extra =
-      select(
-        'network',
-        'Rede de ensino',
-        ['Municipal', 'Estadual', 'Federal', 'Privada', 'Não informada'],
-        v('network', 'Não informada'),
-        false,
-      ) +
-      field('cnpj', 'CNPJ', v('cnpj'), 'text', 'maxlength="14"') +
-      field('inepCode', 'Código Inep', v('inepCode')) +
-      field('cnae', 'CNAE', v('cnae')) +
-      field('address', 'Endereço público', v('address')) +
-      field('phone', 'Contato público da instituição', v('phone')) +
-      field('website', 'Site institucional', v('website'), 'url') +
-      field('recruitmentUrl', 'Canal oficial de candidatura', v('recruitmentUrl'), 'url') +
-      field('lat', 'Latitude', v('lat'), 'number', 'step="any" min="-90" max="90"') +
-      field('lng', 'Longitude', v('lng'), 'number', 'step="any" min="-180" max="180"') +
-      select(
-        'crosscheck',
-        'Cruzamento de bases',
-        [
-          'Não cruzado',
-          'Correspondência por CNPJ',
-          'Correspondência por INEP',
-          'Revisão necessária',
-        ],
-        v('crosscheck', 'Não cruzado'),
-        false,
-      ) +
-      `<div class="stack">${check('active', 'Instituição em atividade', v('active', true))}${check('recruitmentVerified', 'Conferi o canal de candidatura na fonte oficial', v('recruitmentVerified', false))}</div>`;
-  if (kind === 'opportunity')
-    extra =
-      select('type', 'Modalidade', OPPORTUNITY_TYPES, v('type', 'Concurso público'), false) +
-      field('discipline', 'Disciplina', v('discipline'), 'text', 'required') +
-      select('level', 'Nível', LEVELS, v('level', 'Ensino Fundamental'), false) +
-      field('education', 'Escolaridade exigida', v('education'), 'text', 'required') +
-      field('salary', 'Remuneração (R$)', v('salary'), 'number', 'min="0" step="0.01"') +
-      field('hours', 'Jornada semanal', v('hours'), 'number', 'min="1" max="80"') +
-      field('opens', 'Abertura das inscrições', v('opens'), 'date', 'required') +
-      field('closes', 'Encerramento das inscrições', v('closes'), 'date', 'required') +
-      field('examDate', 'Data de prova', v('examDate'), 'date') +
-      select(
-        'stage',
-        'Situação do edital',
-        ['Automático', 'Em andamento', 'Suspenso', 'Finalizado'],
-        v('stage', 'Automático'),
-        false,
-      ) +
-      field('registrationUrl', 'Página oficial de inscrição', v('registrationUrl'), 'url') +
-      field('lat', 'Latitude', v('lat'), 'number', 'step="any" min="-90" max="90"') +
-      field('lng', 'Longitude', v('lng'), 'number', 'step="any" min="-180" max="180"') +
-      textarea('requirements', 'Requisitos', v('requirements'), 'required') +
-      textarea('documents', 'Documentação', v('documents'));
-  if (kind === 'survey')
-    extra =
-      select('topic', 'Tema', topics, v('topic', 'Enquete'), false) +
-      field('closes', 'Encerramento da coleta', v('closes'), 'date') +
-      textarea(
-        'purpose',
-        'Finalidade declarada ao participante',
-        v('purpose'),
-        'required minlength="10"',
-      ) +
-      textarea(
-        'questions',
-        'Perguntas: uma por linha (código | pergunta | opção 1 | opção 2...)',
-        v('questions', [])
-          .map((q) => [q.id, q.label, ...q.options].join(' | '))
-          .join('\n'),
-        'required placeholder="jornada | Quantas horas trabalha? | Até 20 | De 21 a 40 | Mais de 40"',
-      ) +
-      `<div class="wide">${notice('Use somente respostas por categorias. Evite perguntas que identifiquem pessoas. Após a primeira resposta, as perguntas ficam bloqueadas; crie outra pesquisa para mudar o instrumento.')}</div>`;
-  return `<article class="card"><div class="section-title"><h2>${record.id ? 'Editar registro' : 'Novo registro'}</h2><button class="button small" data-action="admin-cancel">Cancelar</button></div>${notice('Salvar cria um rascunho. A publicação exige uma revisão explícita por pessoa responsável; editar um item publicado o retira do ar até nova validação.')}<form data-form="admin-record" data-kind="${kind}" data-id="${h(record.id || '')}"><div class="form-grid two">${field('title', 'Título / nome', v('title'), 'text', 'required minlength="3" maxlength="240"')}${field('city', 'Município', v('city'))}${select('state', 'Estado', STATES, v('state'))}${field('sourceName', 'Nome da fonte', v('sourceName'))}${field('sourceUrl', 'Link da fonte / edital oficial', v('sourceUrl'), 'url')}${field('sourceDate', 'Data de conferência da fonte', v('sourceDate'), 'date')}${field('tags', 'Assuntos (separados por vírgulas)', v('tags', []).join(', '))}${textarea('body', 'Texto / apresentação', v('body'))}${extra}</div><div class="form-actions"><button class="button primary">Salvar rascunho</button></div></form></article>`;
-}
-export async function admin() {
-  if (state.user?.role !== 'admin')
-    return (
-      heading(
-        'Área restrita',
-        'Administração',
-        'Entre com uma conta administrativa para continuar.',
-      ) + `<a class="button" href="#/perfil">Entrar</a>`
-    );
-  let body = '';
-  const tab = state.adminTab;
-  if (recordFields[tab]) {
-    const list = await api(`/admin/records/${tab}`);
-    state.adminRecords = list;
-    list.forEach((r) => state.records.set(r.id, r));
-    if (state.adminEdit !== null)
-      body = editForm(tab, list.find((r) => r.id === state.adminEdit) || {});
-    else
-      body = `<div class="section-title"><h2>${tabs.find((t) => t[0] === tab)[1]}</h2><button class="button primary" data-action="admin-new">${icon('plus')}Novo registro</button></div>${list.length ? `<div class="table-wrap"><table><thead><tr><th>Título</th><th>Estado</th><th>Curadoria</th><th>Atualização</th><th>Ações</th></tr></thead><tbody>${list.map((r) => `<tr><td>${h(r.title)}${r.demo ? ' <span class="badge demo">Demo</span>' : ''}</td><td>${h({ draft: 'Rascunho', published: 'Publicado', archived: 'Arquivado' }[r.status])}</td><td>${h(r.reviewer || 'Pendente')}</td><td>${fmtDate(r.updatedAt)}</td><td><div class="row"><button class="button small" data-action="admin-edit" data-id="${h(r.id)}">Editar</button><button class="button small" data-action="admin-review" data-id="${h(r.id)}">Revisar</button><button class="button small" data-action="admin-history" data-id="${h(r.id)}">Histórico</button>${r.status !== 'archived' ? `<button class="button small" data-action="admin-archive" data-id="${h(r.id)}">Arquivar</button>` : ''}</div></td></tr>`).join('')}</tbody></table></div>` : empty('Nenhum registro cadastrado', 'Crie o primeiro rascunho ou importe os dados.')}`;
-  } else if (tab === 'imports') {
-    const overview = await api('/admin/overview');
-    body = `<article class="card"><h2>Importar bases e conteúdos</h2><p>CSV normalizado, estabelecimentos da Receita Federal ou microdados do Censo Escolar. Registros importados entram em rascunho para revisão humana.</p><form data-form="admin-import" class="stack" style="margin-top:20px"><div class="form-grid">${select(
-      'kind',
-      'Destino',
-      [
-        ['school', 'Instituições'],
-        ['content', 'Notícias e direitos'],
-        ['opportunity', 'Editais'],
-        ['survey', 'Pesquisas'],
-      ],
-      'school',
-      false,
-    )}${select(
-      'format',
-      'Formato',
-      [
-        ['normalized', 'CSV normalizado (com cabeçalho)'],
-        ['cnpj', 'CNPJ / Estabelecimentos (sem cabeçalho)'],
-        ['census', 'Censo Escolar (com cabeçalho)'],
-      ],
-      'normalized',
-      false,
-    )}${select(
-      'delimiter',
-      'Separador',
-      [
-        [';', 'Ponto e vírgula'],
-        [',', 'Vírgula'],
-      ],
-      ';',
-      false,
-    )}${field('sourceDate', 'Data de referência da base', '', 'date', 'required')}${select(
-      'encoding',
-      'Codificação do arquivo',
-      [
-        ['utf-8', 'UTF-8'],
-        ['windows-1252', 'Latin-1 / Windows-1252'],
-      ],
-      'utf-8',
-      false,
-    )}<label class="field">Arquivo CSV (até 8 MB)<input type="file" name="file" accept=".csv,.txt" required></label></div><p class="small-text muted">Para bases nacionais grandes, use a rotina de importação por fluxo e o manifesto documentado no repositório. O arquivo de municípios da Receita resolve os códigos territoriais.</p><button class="button primary">Importar e verificar</button></form></article><h2>Histórico de execuções</h2><div class="stack" style="margin-top:20px">${overview.imports.map((j) => `<article class="card"><h3>${h(j.source)} · ${h(j.status)}</h3><p>${fmtDate(j.started_at)}</p><pre>${h(JSON.stringify(j.summary, null, 2))}</pre></article>`).join('') || empty('Nenhuma importação realizada')}</div>`;
-  } else if (tab === 'quality') {
-    const issues = await api('/admin/quality');
-    state.quality = issues;
-    body = `<div class="section-title"><h2>${issues.length} apontamentos de qualidade</h2><button class="button" data-action="quality-export">${icon('download')}Exportar CSV</button></div>${notice('São sinalizados identificadores duplicados, fontes com mais de 180 dias, falta de coordenadas e divergências entre bases. O responsável deve conferir e corrigir os registros.')}<div class="stack">${issues.map((i) => `<article class="notification"><div class="content"><h3>${h(i.title)}</h3><p class="muted small-text">${h(i.issue)}</p></div><button class="button small" data-action="quality-edit" data-id="${h(i.id)}">Revisar instituição</button></article>`).join('') || empty('Nenhum apontamento encontrado', 'Os critérios automáticos não substituem a verificação humana.')}</div>`;
-  } else if (tab === 'submissions') {
-    const items = await api('/admin/submissions');
-    body =
-      notice(
-        'Acesso restrito à equipe autorizada. Não copie textos identificáveis para publicações. Apenas relatos revisados entram nos totais agregados.',
-      ) +
-      `<div class="masonry">${items.map((s) => `<article class="card"><div class="meta">${h(s.kind)} · ${h(s.category)} · ${h(s.period)}</div><h3>${h(s.territory)}</h3><p>${h(s.body)}</p><p class="small-text muted">Situação: ${h(s.status)}</p><div class="form-actions"><button class="button small" data-action="review-submission" data-id="${h(s.id)}" data-status="reviewed">Revisado</button><button class="button small" data-action="review-submission" data-id="${h(s.id)}" data-status="rejected">Excluir do agregado</button></div></article>`).join('') || empty('Nenhum relato recebido')}</div>`;
-  } else if (tab === 'statistics') {
-    const o = await api('/admin/overview');
-    body = `<div class="stat-grid"><div class="stat"><strong>${o.users}</strong><span>Contas cadastradas</span></div><div class="stat"><strong>${o.responses}</strong><span>Respostas coletadas</span></div><div class="stat"><strong>${o.records.reduce((a, b) => a + b.total, 0)}</strong><span>Registros editoriais</span></div><div class="stat"><strong>${o.usage.reduce((a, b) => a + b.requests, 0)}</strong><span>Carregamentos de página · últimos 30 dias</span></div></div><div class="grid"><article class="card"><h3>Acervo por módulo e situação</h3>${o.records.map((r) => `<div class="result-row"><span>${h(tabs.find((t) => t[0] === r.kind)?.[1] || r.kind)} · ${h(r.status)}</span><strong>${r.total}</strong></div>`).join('')}</article><article class="card"><h3>Resultados e relatórios protegidos</h3><p>As exportações públicas e administrativas de pesquisas usam os mesmos agregados e regras de supressão. Não há exportação de respostas individuais.</p><a class="button" style="margin-top:20px" href="#/resultados">Abrir relatórios</a></article></div><div class="table-wrap"><table><thead><tr><th>Dia</th><th>Carregamentos (sem identificadores)</th></tr></thead><tbody>${o.usage.map((r) => `<tr><td>${fmtDate(r.day)}</td><td>${r.requests}</td></tr>`).join('')}</tbody></table></div>`;
-  } else if (tab === 'privacy') {
-    const requests = await api('/admin/privacy-requests');
-    body = `<div class="stack">${requests.map((p) => `<article class="card"><div class="meta">${h(p.kind)} · ${h(p.status)} · ${fmtDate(p.created_at)}</div><h3>${h(p.name)}</h3><p>${h(p.email)}</p><p>${h(p.body)}</p><p class="small-text">Protocolo: ${h(p.id)}</p>${p.status !== 'resolved' ? `<button class="button" data-action="resolve-privacy" data-id="${h(p.id)}" style="margin-top:15px">Marcar como atendida</button>` : ''}</article>`).join('') || empty('Nenhuma solicitação pendente')}</div>`;
-  }
-  return (
-    heading(
-      'Gestão e responsabilidade',
-      'Administração',
-      'Curadoria identificada, qualidade dos dados e cuidado com a comunidade.',
-    ) +
-    `<div class="tabs">${tabs.map(([key, label]) => `<button class="chip ${tab === key ? 'active' : ''}" data-action="admin-tab" data-tab="${key}">${label}</button>`).join('')}</div>` +
-    body
+function editor(kind, r = {}) {
+  if (kind === 'story')
+    return `<article class="card"><h2>${r.id ? 'Editar' : 'Adicionar'} relato autorizado</h2>${notice('Copie apenas o texto que será público. Não cadastre e-mail, PDF recebido ou contato do professor. O nome é opcional; marque anônimo quando solicitado.')}<form data-form="story" class="stack">${field('title', 'Título', r.title || '', 'text', 'required maxlength="240"')}${textarea('body', 'Relato público', r.body || '', 'required maxlength="12000"')}${field('author', 'Nome público (opcional)', r.author || '')}${check('anonymous', 'Publicar como anônimo', r.anonymous !== false)}${check('consent', 'Recebi autorização explícita para publicar este relato', r.consent === true)}<div class="form-actions"><button class="button primary">Salvar rascunho</button><button type="button" class="button" data-action="cancel">Cancelar</button></div></form></article>`;
+  const data = Object.fromEntries(
+    Object.entries(r).filter(
+      ([key]) =>
+        ![
+          'id',
+          'kind',
+          'status',
+          'reviewer',
+          'reviewedAt',
+          'updatedAt',
+          'firstPublishedAt',
+          'revision',
+          'demo',
+        ].includes(key),
+    ),
   );
+  return `<article class="card"><h2>Editar registro</h2><p>As notícias, vagas e instituições são atualizadas automaticamente. Este editor serve para correções excepcionais.</p><form data-form="record" class="stack">${textarea('json', 'Dados públicos (JSON)', JSON.stringify(data, null, 2), 'required rows="18"')}<button class="button primary">Salvar rascunho</button><button type="button" class="button" data-action="cancel">Cancelar</button></form></article>`;
 }
-export async function adminAction(action, el, ctx) {
-  const id = el.dataset.id;
-  if (action === 'admin-tab') {
-    state.adminTab = el.dataset.tab;
-    state.adminEdit = null;
-  } else if (action === 'admin-new') state.adminEdit = '';
-  else if (action === 'admin-cancel') state.adminEdit = null;
-  else if (action === 'admin-edit') state.adminEdit = id;
-  else if (action === 'quality-edit') {
-    state.adminTab = 'school';
-    state.adminEdit = id;
-  } else if (action === 'admin-review') {
-    const r = state.records.get(id);
-    dialog(
-      'Conferência antes da publicação',
-      `<h3>${h(r.title)}</h3><p class="muted" style="margin:15px 0;white-space:pre-wrap">${h(r.body)}</p>${r.summary ? `<p>${h(r.summary)}</p>` : ''}${external(r.sourceUrl, 'Abrir fonte para conferir')}<p class="small-text muted" style="margin-top:15px">Responsável público: ${h(state.user.name)}. Data da fonte: ${fmtDate(r.sourceDate)}.</p><form class="stack" data-form="admin-publish" data-id="${h(id)}" style="margin-top:20px">${check('attestation', 'Li o registro, conferi a fonte e assumo a responsabilidade pela validação humana desta publicação.')}<button class="button primary">Validar e publicar</button></form>`,
-    );
-    return true;
-  } else if (action === 'admin-history') {
-    const list = await api(`/admin/history/${encodeURIComponent(id)}`);
-    dialog(
-      'Histórico de alterações',
-      `<div class="stack">${list.map((i) => `<div><h3>${h(i.action)} · ${h(i.actor)}</h3><small>${fmtDate(i.created_at)}</small><details><summary>Conteúdo registrado nesta revisão</summary><pre>${h(JSON.stringify(i.data, null, 2))}</pre></details></div>`).join('')}</div>`,
-    );
-    return true;
-  } else if (action === 'admin-archive') {
-    await api(`/admin/records/${encodeURIComponent(id)}/archive`, { method: 'POST', body: {} });
-    toast('Registro arquivado. Você pode revisá-lo e republicá-lo.');
-  } else if (action === 'review-submission')
-    await api(`/admin/submissions/${encodeURIComponent(id)}/review`, {
-      method: 'POST',
-      body: { status: el.dataset.status },
-    });
-  else if (action === 'resolve-privacy')
-    await api(`/admin/privacy-requests/${encodeURIComponent(id)}/resolve`, {
-      method: 'POST',
-      body: {},
-    });
-  else if (action === 'quality-export') {
-    download(
-      'qualidade-dados.csv',
-      csv([['Registro', 'Problema'], ...state.quality.map((q) => [q.title, q.issue])]),
-      'text/csv;charset=utf-8',
-    );
-    return true;
-  } else return false;
-  await ctx.render();
-  return true;
+async function render() {
+  const main = document.querySelector('#main');
+  if (!session) {
+    main.innerHTML = `<article class="card reading"><h2>Acesso do proprietário</h2><p>Use a senha criada pelo comando npm run admin. Não existe cadastro de visitantes.</p><form data-form="login" class="stack">${field('password', 'Senha do painel', '', 'password', 'required autocomplete="current-password"')}<button class="button primary">Entrar no painel</button></form></article>`;
+    return;
+  }
+  let body = '';
+  if (tab === 'features') {
+    config = await request('/settings');
+    body = `<article class="card"><h2>Ferramentas disponíveis no site</h2><p>Desativar todas deixa o conteúdo e as ferramentas vazios, mantendo somente o cabeçalho. Os dados públicos permanecem guardados para reativação.</p><div class="form-actions"><button class="button" data-action="disable-all">Desabilitar todas</button><button class="button primary" data-action="enable-all">Habilitar todas</button></div>${Object.entries(
+      FEATURES,
+    )
+      .map(
+        ([key, label]) =>
+          `<label class="tool-switch"><span>${h(label)}</span><input type="checkbox" role="switch" aria-label="${h(label)}" data-feature="${key}" ${config.features[key] ? 'checked' : ''}></label>`,
+      )
+      .join('')}</article>`;
+  } else if (tab === 'automation') {
+    const data = await request('/automation');
+    body = `<div class="form-actions"><button class="button primary" data-action="sync">Verificar atualizações</button><button class="button" data-action="refresh">Atualizar estado</button></div>${notice('Sincronização automática de notícias e vagas a cada seis horas, sem IA. O botão respeita os limites de frequência das fontes. O radar usa lotes limitados da base pública para caber na hospedagem gratuita. Falhas preservam o último catálogo.')}<div class="grid">${data.sources.map((s) => `<article class="card"><h3>${h(s.name)}</h3>${external(s.terms, 'Condições de uso')}</article>`).join('')}</div><h2>Últimas execuções</h2><div class="stack">${data.jobs.map((j) => `<article class="card"><h3>${h(j.source)} · ${h(j.status)}</h3><p>${h(j.started_at)}</p><pre>${h(j.summary)}</pre></article>`).join('') || empty('Aguardando primeira atualização')}</div>`;
+  } else {
+    items = await request('/records/' + tab);
+    if (editing !== null) body = editor(tab, items.find((r) => r.id === editing) || {});
+    else
+      body = `<div class="section-title"><h2>${h(tabs.find((t) => t[0] === tab)[1])}</h2>${tab === 'story' ? '<button class="button primary" data-action="new">Adicionar relato</button>' : ''}</div><div class="stack">${items.map((r) => `<article class="card"><div class="meta">${h(r.status)} · ${r.automatic ? 'Automático' : h(r.author || 'Anônimo / curadoria')}</div><h3>${h(r.title)}</h3><p>${h((r.body || '').slice(0, 300))}</p><div class="form-actions"><button class="button small" data-action="edit" data-id="${h(r.id)}">Editar</button>${r.status !== 'published' ? `<button class="button small primary" data-action="publish" data-id="${h(r.id)}">Revisar e publicar</button>` : `<button class="button small" data-action="archive" data-id="${h(r.id)}">Retirar do site</button>`}</div></article>`).join('') || empty('Nenhum registro nesta área')}</div>`;
+  }
+  main.innerHTML =
+    `<div class="section-title"><p>${h(session.name)}</p><button class="button" data-action="logout">Sair</button></div><nav class="tabs">${tabs.map(([key, label]) => `<button class="chip ${tab === key ? 'active' : ''}" data-action="tab" data-tab="${key}">${label}</button>`).join('')}</nav>` +
+    body;
+  refreshIcons();
 }
-export async function submitAdmin(type, form, v, ctx) {
-  if (type === 'admin-record') {
-    const kind = form.dataset.kind;
-    const original = state.records.get(form.dataset.id) || {};
-    const data = {};
-    for (const k of [...baseFields, ...recordFields[kind]]) {
-      if (['provenance'].includes(k)) data[k] = original[k] || [];
-      else if (['salary', 'hours', 'year', 'lat', 'lng'].includes(k))
-        data[k] = v[k] === '' ? null : Number(v[k]);
-      else if (['active', 'recruitmentVerified'].includes(k)) data[k] = !!v[k];
-      else if (k === 'tags')
-        data[k] = v[k]
-          .split(',')
-          .map((s) => s.trim())
-          .filter(Boolean);
-      else if (k === 'questions')
-        data[k] = v[k]
-          .split('\n')
-          .filter((s) => s.trim())
-          .map((line) => {
-            const [id, label, ...options] = line.split('|').map((s) => s.trim());
-            return { id, label, options };
-          });
-      else if (k === 'history')
-        data[k] = v[k]
-          .split('\n')
-          .filter((s) => s.trim())
-          .map((line) => {
-            const [date, description, sourceUrl] = line.split('|').map((s) => s.trim());
-            return { date, description, sourceUrl };
-          });
-      else data[k] = v[k] ?? '';
+document.addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-action]');
+  if (!b) return;
+  const action = b.dataset.action;
+  try {
+    if (action === 'close-dialog') {
+      document.querySelector('#dialog').close();
+      return;
     }
-    await api(
-      `/admin/records/${kind}${form.dataset.id ? '/' + encodeURIComponent(form.dataset.id) : ''}`,
-      { method: form.dataset.id ? 'PUT' : 'POST', body: data },
-    );
-    state.adminEdit = null;
-    await ctx.render();
-    toast('Rascunho salvo. Revise antes de publicar.');
-    return true;
-  }
-  if (type === 'admin-publish') {
-    if (!v.attestation)
-      throw new Error('A publicação exige conferência e validação humana explícitas.');
-    await api(`/admin/records/${encodeURIComponent(form.dataset.id)}/publish`, {
-      method: 'POST',
-      body: { attestation: true },
-    });
-    document.querySelector('#dialog').close();
-    await ctx.render();
-    toast('Publicação validada e alertas gerados.');
-    return true;
-  }
-  if (type === 'admin-import') {
-    const file = form.elements.file.files[0];
-    if (!file || file.size > 8 * 1024 * 1024)
-      throw new Error(
-        'Selecione um CSV de até 8 MB. Para bases grandes, use a rotina de importação.',
+    if (action === 'tab') {
+      tab = b.dataset.tab;
+      editing = null;
+    } else if (action === 'logout') {
+      await request('/auth/logout', {});
+      session = null;
+      csrf = null;
+    } else if (action === 'new') editing = '';
+    else if (action === 'edit') editing = b.dataset.id;
+    else if (action === 'cancel') editing = null;
+    else if (action === 'disable-all' || action === 'enable-all') {
+      await request(
+        '/settings',
+        {
+          features: Object.fromEntries(
+            Object.keys(FEATURES).map((k) => [k, action === 'enable-all']),
+          ),
+        },
+        'PUT',
       );
-    const content = new TextDecoder(v.encoding).decode(await file.arrayBuffer());
-    const result = await api('/admin/imports', {
-      method: 'POST',
-      body: {
-        kind: v.kind,
-        format: v.format,
-        delimiter: v.delimiter,
-        sourceDate: v.sourceDate,
-        csv: content,
-      },
-    });
-    await ctx.render();
-    dialog(
-      'Resultado da importação',
-      `<p class="muted">${result.created} registros criados; ${result.updated} atualizados; ${result.skipped} ignorados. Os registros aguardam revisão humana.</p><pre>${h(JSON.stringify(result, null, 2))}</pre>`,
-    );
-    return true;
+      toast('Ferramentas atualizadas.');
+    } else if (action === 'sync') {
+      await request('/automation/run', {});
+      toast('Verificação solicitada. Atualize o estado em alguns instantes.');
+    } else if (action === 'archive') {
+      await request('/records/' + encodeURIComponent(b.dataset.id) + '/archive', {});
+      toast('Publicação retirada do site.');
+    } else if (action === 'publish') {
+      const r = items.find((r) => r.id === b.dataset.id);
+      dialog(
+        'Revisar publicação',
+        `<h3>${h(r.title)}</h3><p style="white-space:pre-wrap">${h(r.body)}</p><form data-form="publish" data-id="${h(r.id)}" class="stack">${check('attestation', 'Conferi o texto, a autorização e removi contatos/dados que não devem ser públicos.')}<button class="button primary">Publicar no site</button></form>`,
+      );
+      return;
+    }
+    await render();
+  } catch (error) {
+    toast(error.message);
   }
-  return false;
-}
+});
+document.addEventListener('change', async (e) => {
+  if (!e.target.dataset.feature) return;
+  try {
+    const features = { ...config.features, [e.target.dataset.feature]: e.target.checked };
+    config = await request('/settings', { features }, 'PUT');
+    toast('Ferramenta atualizada.');
+  } catch (error) {
+    e.target.checked = !e.target.checked;
+    toast(error.message);
+  }
+});
+document.addEventListener('submit', async (e) => {
+  const form = e.target.closest('form[data-form]');
+  if (!form) return;
+  e.preventDefault();
+  const v = Object.fromEntries(new FormData(form));
+  try {
+    if (form.dataset.form === 'login') {
+      const data = await request('/auth/login', { password: v.password });
+      session = data.user;
+      csrf = data.csrf;
+    } else if (form.dataset.form === 'publish') {
+      if (!v.attestation) throw new Error('Confirme a revisão antes de publicar.');
+      await request('/records/' + encodeURIComponent(form.dataset.id) + '/publish', {
+        attestation: true,
+      });
+      document.querySelector('#dialog').close();
+    } else {
+      const data =
+        form.dataset.form === 'story'
+          ? {
+              title: v.title,
+              body: v.body,
+              author: v.anonymous ? '' : v.author,
+              anonymous: !!v.anonymous,
+              consent: !!v.consent,
+              sourceName: 'Relato autorizado enviado por e-mail',
+              sourceDate: new Date().toISOString().slice(0, 10),
+            }
+          : JSON.parse(v.json);
+      await request(
+        '/records/' + tab + (editing ? '/' + encodeURIComponent(editing) : ''),
+        data,
+        editing ? 'PUT' : 'POST',
+      );
+      editing = null;
+      toast('Rascunho salvo. Revise para publicar.');
+    }
+    await render();
+  } catch (error) {
+    toast(error.message);
+  }
+});
+request('/auth/session')
+  .then((data) => {
+    session = data.user;
+    csrf = data.csrf;
+    return render();
+  })
+  .catch((e) => {
+    document.querySelector('#main').innerHTML = empty('Conexão privada indisponível', e.message);
+  });

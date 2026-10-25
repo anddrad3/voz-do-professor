@@ -1,184 +1,158 @@
 import './styles.css';
-import { state, api, loadRecords } from './api.js';
-import {
-  h,
-  icon,
-  refreshIcons,
-  toast,
-  dialog,
-  download,
-  field,
-  heading,
-  empty,
-  fmtDate,
-} from './ui.js';
+import { state, api, loadRecords, enabled, saveLocal, clearLocal, localAlerts } from './api.js';
+import { h, icon, refreshIcons, toast, dialog, field, empty, fmtDate, arrangeCards } from './ui.js';
 import { home, catalog, detail, loadMap, exportCalendar, globalSearch } from './modules/catalog.js';
-import {
-  voice,
-  survey,
-  results,
-  story,
-  withdrawal,
-  reportCSV,
-  submitVoice,
-} from './modules/voice.js';
-import { profile, notifications, privacyRequest, submitProfile } from './modules/profile.js';
+import { voice, survey, story, withdrawal } from './modules/voice.js';
+import { profile, notifications, submitProfile } from './modules/profile.js';
 import { transparency } from './modules/transparency.js';
-import { admin, adminAction, submitAdmin } from './modules/admin.js';
 const nav = [
-  ['inicio', 'Início', 'house'],
-  ['direitos', 'Direitos e Notícias', 'newspaper'],
-  ['radar', 'Radar de Escolas', 'map-pinned'],
-  ['oportunidades', 'Oportunidades', 'briefcase-business'],
-  ['voz', 'Voz do Professor', 'messages-square'],
-  ['alertas', 'Meus Alertas', 'bell'],
-  ['perfil', 'Meu Perfil', 'user-round'],
-  ['transparencia', 'Transparência', 'shield-check'],
+  ['inicio', 'Início', 'house', null],
+  ['direitos', 'Direitos e Notícias', 'newspaper', 'content'],
+  ['radar', 'Radar de Escolas', 'map-pinned', 'school'],
+  ['oportunidades', 'Oportunidades', 'briefcase-business', 'opportunity'],
+  ['voz', 'Voz do Professor', 'messages-square', 'voice'],
+  ['alertas', 'Meus Alertas', 'bell', 'alerts'],
+  ['perfil', 'Minha Sala de Aula', 'chalkboard-user', 'preferences'],
+  ['transparencia', 'Transparência', 'shield-check', null],
 ];
-let renderVersion = 0;
-let speechId = null;
-function applyTheme(theme) {
-  document.documentElement.dataset.theme = theme;
-  const dark = theme === 'dark';
-  const button = document.querySelector('#theme-toggle');
-  button.setAttribute('aria-label', dark ? 'Ativar modo claro' : 'Ativar modo escuro');
-  button.innerHTML = icon(dark ? 'sun' : 'moon');
+let version = 0,
+  speechId = null;
+function theme(value) {
+  document.documentElement.dataset.theme = value;
+  const b = document.querySelector('#theme-toggle');
+  b.setAttribute('aria-label', value === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro');
+  b.innerHTML = icon(value === 'dark' ? 'sun' : 'moon');
   try {
-    localStorage.setItem('voz-theme', theme);
+    localStorage.setItem('voz-theme', value);
   } catch {}
   refreshIcons();
 }
 try {
-  applyTheme(localStorage.getItem('voz-theme') || 'dark');
+  theme(localStorage.getItem('voz-theme') || 'dark');
 } catch {
-  applyTheme('dark');
+  theme('dark');
 }
-async function refreshAccount() {
-  state.favorites.clear();
-  if (state.user) {
-    const [favorites, alerts] = await Promise.all([
-      api('/account/favorites'),
-      api('/account/notifications'),
-    ]);
-    favorites.forEach((r) => {
-      state.favorites.add(r.id);
-      state.records.set(r.id, r);
-    });
-    const unread = alerts.filter((a) => !a.read_at).length;
-    const badge = document.querySelector('#notification-count');
-    badge.hidden = !unread;
-    badge.textContent = String(unread);
-  } else document.querySelector('#notification-count').hidden = true;
-  document.querySelector('#account-link').innerHTML =
-    icon('user-round') + `<span>${h(state.user ? state.user.name.split(' ')[0] : 'Entrar')}</span>`;
-  document
-    .querySelector('#account-link')
-    .setAttribute('aria-label', state.user ? 'Abrir meu perfil' : 'Entrar na conta');
-  refreshIcons();
-}
-function route() {
-  const [area = 'inicio', id] = location.hash.replace(/^#\/?/, '').split('/');
-  let decoded = '';
+const route = () => {
+  const [area = 'inicio', raw = ''] = location.hash.replace(/^#\/?/, '').split('/');
+  let id = '';
   try {
-    decoded = decodeURIComponent(id || '');
+    id = decodeURIComponent(raw);
   } catch {}
-  return { area: area || 'inicio', id: decoded };
-}
-document.querySelector('.skip').addEventListener('click', (event) => {
-  event.preventDefault();
-  document.querySelector('#main').focus();
-  document.querySelector('#main').scrollIntoView();
-});
+  return { area: area || 'inicio', id };
+};
 async function render() {
-  const version = ++renderVersion;
+  const revision = ++version;
   const { area, id } = route();
   if (state.map) {
     state.map.remove();
     state.map = null;
   }
-  document.querySelector('#navigation').innerHTML =
-    nav
-      .map(
-        ([key, name, ico]) =>
-          `<a class="nav-link ${area === key ? 'active' : ''}" href="#/${key}" ${area === key ? 'aria-current="page"' : ''}>${icon(ico)}${name}</a>`,
-      )
-      .join('') +
-    (state.user?.role === 'admin'
-      ? `<a class="nav-link ${area === 'admin' ? 'active' : ''}" href="#/admin">${icon('settings-2')}Gestão</a>`
-      : '');
-  document.querySelector('#environment-note').innerHTML = state.config.demo
-    ? '<div class="demo-note"><span></span>Ambiente de demonstração · exemplos identificados nos cards · nenhuma vaga ou notícia demonstrativa é real</div>'
+  // Recheck switches every navigation; a disabled section is also blocked on the server.
+  state.config = await api('/config');
+  const any = Object.values(state.config.features).some(Boolean);
+  const navigation = document.querySelector('#navigation');
+  navigation.innerHTML = any
+    ? nav
+        .filter((n) => !n[3] || enabled(n[3]) || (n[0] === 'perfil' && enabled('favorites')))
+        .map(
+          ([k, label, ico]) =>
+            `<a class="nav-link ${k === area ? 'active' : ''}" href="#/${k}" ${k === area ? 'aria-current="page"' : ''}>${icon(ico)}${label}</a>`,
+        )
+        .join('')
     : '';
+  document.querySelector('[data-action="search"]').hidden = !enabled('search');
+  document.querySelector('#account-link').hidden = !enabled('preferences') && !enabled('favorites');
+  document.querySelector('a[aria-label="Meus alertas"]').hidden = !enabled('alerts');
+  document.querySelector('.footer').hidden = !any;
+  document.querySelector('#environment-note').innerHTML =
+    any && state.config.demo
+      ? '<div class="demo-note"><span></span>Exemplos identificados nos cards · notícias automáticas mostram sua fonte original</div>'
+      : '';
   const main = document.querySelector('#main');
   main.setAttribute('aria-busy', 'true');
   try {
-    let output;
-    switch (area) {
-      case 'busca':
-        output = await globalSearch(id);
-        break;
-      case 'inicio':
-        output = await home();
-        break;
-      case 'direitos':
-        output = await catalog('content');
-        break;
-      case 'radar':
-        output = await catalog('school');
-        break;
-      case 'oportunidades':
-        output = await catalog('opportunity');
-        break;
-      case 'voz':
-        output = await voice();
-        break;
-      case 'resultados':
-        output = await results();
-        break;
-      case 'perfil':
-        output = await profile();
-        break;
-      case 'alertas':
-        output = await notifications();
-        break;
-      case 'transparencia':
-        output = transparency();
-        break;
-      case 'admin':
-        output = await admin();
-        break;
-      case 'detalhe':
-        output = await detail(id);
-        if (output === null) output = await survey(id);
-        break;
-      default:
-        output = empty('Página não encontrada', 'Escolha uma área no menu acima.');
-    }
-    if (version !== renderVersion) return;
+    let output = '';
+    const feature = nav.find((n) => n[0] === area)?.[3] || (area === 'busca' ? 'search' : null);
+    if (!any) output = '';
+    else if (feature && !enabled(feature) && !(area === 'perfil' && enabled('favorites')))
+      output = empty('Área indisponível', 'Esta ferramenta está desativada no momento.');
+    else
+      switch (area) {
+        case 'inicio':
+          output = await home();
+          break;
+        case 'busca':
+          output = await globalSearch(id);
+          break;
+        case 'direitos':
+          output = await catalog('content');
+          break;
+        case 'radar':
+          output = await catalog('school');
+          break;
+        case 'oportunidades':
+          output = await catalog('opportunity');
+          break;
+        case 'voz':
+          output = await voice();
+          break;
+        case 'perfil':
+          output = await profile();
+          break;
+        case 'alertas':
+          output = await notifications();
+          break;
+        case 'transparencia':
+          output = transparency();
+          break;
+        case 'detalhe':
+          output = await detail(id);
+          if (output === null) output = await survey(id);
+          break;
+        default:
+          output = empty('Página não encontrada');
+      }
+    if (revision !== version) return;
     main.innerHTML = output;
-    document.title =
-      (nav.find((n) => n[0] === area)?.[1] ||
-        { admin: 'Administração', busca: 'Busca', resultados: 'Resultados' }[area] ||
-        'Publicação') + ' · Voz do Professor';
+    main.dataset.view = state.view;
+    arrangeCards();
+    if (output && !matchMedia('(prefers-reduced-motion: reduce)').matches)
+      main.animate(
+        [
+          { opacity: 0, transform: 'translateY(10px)' },
+          { opacity: 1, transform: 'translateY(0)' },
+        ],
+        { duration: 260, easing: 'ease-out' },
+      );
+    document.title = (nav.find((n) => n[0] === area)?.[1] || 'Publicação') + ' · Voz do Professor';
     refreshIcons();
-  } catch (error) {
-    if (version === renderVersion)
+  } catch (e) {
+    if (revision === version)
       main.innerHTML =
-        empty('Não foi possível abrir esta área', error.message) +
-        `<div class="form-actions"><button class="button" data-action="retry">Tentar novamente</button><a class="button" href="#/inicio">Voltar ao início</a></div>`;
+        empty('Não foi possível abrir esta área', e.message) +
+        `<button class="button" data-action="retry">Tentar novamente</button>`;
   } finally {
-    if (version === renderVersion) main.removeAttribute('aria-busy');
+    if (revision === version) main.removeAttribute('aria-busy');
   }
 }
-const ctx = { render, refreshAccount };
-document.addEventListener('click', async (event) => {
-  const el = event.target.closest('[data-action]');
+document.querySelector('.skip').addEventListener('click', (e) => {
+  e.preventDefault();
+  document.querySelector('#main').focus();
+});
+document.addEventListener('click', async (e) => {
+  const el = e.target.closest('[data-action]');
   if (!el) return;
+  e.preventDefault();
   const action = el.dataset.action;
-  event.preventDefault();
   try {
+    if (action === 'view') {
+      state.view = el.dataset.view === 'list' ? 'list' : 'grid';
+      saveLocal();
+      await render();
+      return;
+    }
     if (action === 'theme') {
-      applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
+      theme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
       return;
     }
     if (action === 'close-dialog') {
@@ -190,90 +164,96 @@ document.addEventListener('click', async (event) => {
       return;
     }
     if (action === 'search') {
+      if (!enabled('search')) return;
       dialog(
         'Buscar na plataforma',
-        `<form data-form="global-search" class="stack">${field('q', 'Palavra-chave', '', 'search', 'required autofocus placeholder="Legislação, carreira, oportunidades…"')}<button class="button primary">Pesquisar</button></form>`,
+        `<form data-form="global-search" class="stack">${field('q', 'Palavra-chave', '', 'search', 'required autofocus')}<button class="button primary">Pesquisar</button></form>`,
       );
       return;
     }
     if (action === 'favorite') {
-      if (!state.user) {
-        toast('Entre para salvar seus favoritos.');
-        location.hash = '#/perfil';
-        return;
-      }
-      const id = el.dataset.id,
-        saved = state.favorites.has(id);
-      await api(`/account/favorites/${encodeURIComponent(id)}`, {
-        method: saved ? 'DELETE' : 'POST',
-        body: {},
-      });
-      saved ? state.favorites.delete(id) : state.favorites.add(id);
-      document.querySelectorAll('[data-action="favorite"]').forEach((button) => {
-        if (button.dataset.id !== id) return;
-        button.setAttribute('aria-pressed', String(!saved));
-        button.setAttribute(
-          'aria-label',
-          saved ? 'Adicionar aos favoritos' : 'Remover dos favoritos',
-        );
-        button.innerHTML =
-          icon(saved ? 'bookmark' : 'bookmark-check') +
-          (button.classList.contains('icon-button') ? '' : saved ? 'Salvar' : 'Salvo');
+      if (!enabled('favorites')) return;
+      const id = el.dataset.id;
+      state.favorites.has(id) ? state.favorites.delete(id) : state.favorites.add(id);
+      saveLocal();
+      document.querySelectorAll('[data-action="favorite"]').forEach((b) => {
+        if (b.dataset.id !== id) return;
+        const saved = state.favorites.has(id);
+        b.setAttribute('aria-pressed', String(saved));
+        b.setAttribute('aria-label', saved ? 'Remover dos favoritos' : 'Adicionar aos favoritos');
+        b.innerHTML =
+          icon(saved ? 'bookmark-check' : 'bookmark') +
+          (b.classList.contains('icon-button') ? '' : saved ? 'Salvo' : 'Salvar');
       });
       refreshIcons();
-      toast(saved ? 'Removido dos favoritos.' : 'Salvo nos seus favoritos.');
+      toast(
+        state.cacheWarning
+          ? 'Salvo apenas nesta sessão: armazenamento bloqueado.'
+          : 'Favoritos atualizados neste navegador.',
+      );
+      return;
+    }
+    if (action === 'clear-local') {
+      clearLocal();
+      theme('dark');
+      await render();
+      toast('Dados locais apagados.');
+      return;
+    }
+    if (action === 'read-all' || action === 'read-notification') {
+      state.readAlerts = [
+        ...new Set([
+          ...state.readAlerts,
+          ...(action === 'read-all'
+            ? (state.currentAlerts || []).map((a) => a.alertKey)
+            : [el.dataset.id]),
+        ]),
+      ];
+      saveLocal();
+      await render();
       return;
     }
     if (action === 'citation') {
       const r = state.records.get(el.dataset.id);
-      const text = `${r.sourceName || 'VOZ DO PROFESSOR'}. ${r.title}. ${r.sourceDate ? fmtDate(r.sourceDate) : ''}. ${r.sourceUrl || location.href}. Curadoria: ${r.reviewer || 'Demonstração sem validação humana'}.${r.demo ? ' CONTEÚDO DEMONSTRATIVO.' : ''}`;
+      const text = `${r.sourceName || 'Voz do Professor'}. ${r.title}. ${fmtDate(r.sourceDate)}. ${r.sourceUrl || location.href}. ${r.attribution || ''}`;
       try {
         await navigator.clipboard.writeText(text);
         toast('Referência copiada.');
       } catch {
-        dialog(
-          'Referência para copiar',
-          `<textarea readonly aria-label="Referência">${h(text)}</textarea>`,
-        );
+        dialog('Referência', `<textarea readonly>${h(text)}</textarea>`);
       }
       return;
     }
     if (action === 'audio') {
-      if (!('speechSynthesis' in window)) {
-        toast('Este navegador não oferece leitura em voz alta.');
-        return;
-      }
-      const r = state.records.get(el.dataset.id);
+      if (!enabled('audio')) return;
+      if (!window.speechSynthesis) throw new Error('Leitura em voz alta indisponível.');
       speechSynthesis.cancel();
-      document
-        .querySelectorAll('[data-action="audio"]')
-        .forEach((b) => (b.innerHTML = icon('play') + 'Ouvir'));
-      if (speechId === r.id) {
+      if (speechId === el.dataset.id) {
         speechId = null;
+        el.innerHTML = icon('play') + 'Ouvir';
         refreshIcons();
         return;
       }
-      speechId = r.id;
-      const utterance = new SpeechSynthesisUtterance(
+      const r = state.records.get(el.dataset.id);
+      const u = new SpeechSynthesisUtterance(
         [r.title, r.body, r.summary].filter(Boolean).join('. '),
       );
-      utterance.lang = 'pt-BR';
-      const localVoice = speechSynthesis
-        .getVoices()
-        .find((v) => v.lang.startsWith('pt') && v.localService);
-      if (localVoice) utterance.voice = localVoice;
-      utterance.onend = utterance.onerror = () => {
+      u.lang = 'pt-BR';
+      const v = speechSynthesis.getVoices().find((v) => v.localService && v.lang.startsWith('pt'));
+      if (v) u.voice = v;
+      speechId = r.id;
+      u.onend = u.onerror = () => {
         speechId = null;
         el.innerHTML = icon('play') + 'Ouvir';
         refreshIcons();
       };
       el.innerHTML = icon('square') + 'Parar';
-      speechSynthesis.speak(utterance);
+      speechSynthesis.speak(u);
       refreshIcons();
       return;
     }
     if (action === 'content-category') {
-      state.filters.content = { type: el.dataset.value };
+      state.filters.content = { ...(state.filters.content || {}), type: el.dataset.value };
       if (route().area === 'direitos') await render();
       else location.hash = '#/direitos';
       return;
@@ -285,23 +265,26 @@ document.addEventListener('click', async (event) => {
     }
     if (action === 'geolocate') {
       if (!navigator.geolocation)
-        throw new Error('Geolocalização indisponível. Informe as coordenadas manualmente.');
+        throw new Error('Localização indisponível; escolha sua cidade manualmente.');
       const form = el.closest('form');
       navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          form.elements.lat.value = pos.coords.latitude.toFixed(4);
-          form.elements.lng.value = pos.coords.longitude.toFixed(4);
-          toast('Localização preenchida. Aplique os filtros ou salve o perfil.');
+        async (p) => {
+          form.elements.lat.value = p.coords.latitude.toFixed(4);
+          form.elements.lng.value = p.coords.longitude.toFixed(4);
+          if (form.dataset.form === 'filter') {
+            if (form.elements.radius.value === '0') form.elements.radius.value = '10';
+            form.requestSubmit();
+          }
+          toast('Localização usada somente neste navegador.');
         },
-        () =>
-          toast('Localização não autorizada ou indisponível. Informe as coordenadas manualmente.'),
+        () => toast('Localização não autorizada. Você pode escolher a região manualmente.'),
         { enableHighAccuracy: false, timeout: 12000 },
       );
       return;
     }
     if (action === 'city-center') {
-      const form = el.closest('form');
-      const city = form.elements.city.value.trim().toLocaleLowerCase('pt-BR');
+      const form = el.closest('form'),
+        city = form.elements.city.value.trim().toLocaleLowerCase('pt-BR');
       if (!city) throw new Error('Informe o município primeiro.');
       const schools = await loadRecords('school');
       const matches = schools.filter(
@@ -309,23 +292,23 @@ document.addEventListener('click', async (event) => {
           s.city.toLocaleLowerCase('pt-BR') === city &&
           s.lat != null &&
           s.lng != null &&
-          (!form.elements.state.value || s.state === form.elements.state.value),
+          (!form.elements.state.value || form.elements.state.value === s.state),
       );
       if (!matches.length)
         throw new Error(
-          'Não há coordenadas dessa cidade na base. Informe sua localização manualmente.',
+          'Não há coordenadas dessa cidade na base. Use sua localização ou retire o raio.',
         );
-      form.elements.lat.value = (matches.reduce((a, b) => a + b.lat, 0) / matches.length).toFixed(
+      form.elements.lat.value = (matches.reduce((a, s) => a + s.lat, 0) / matches.length).toFixed(
         4,
       );
-      form.elements.lng.value = (matches.reduce((a, b) => a + b.lng, 0) / matches.length).toFixed(
+      form.elements.lng.value = (matches.reduce((a, s) => a + s.lng, 0) / matches.length).toFixed(
         4,
       );
-      toast('Referência aproximada calculada pelas escolas cadastradas. Aplique os filtros.');
+      toast('Centro aproximado preenchido. Aplique os filtros.');
       return;
     }
     if (action === 'load-map') {
-      await loadMap();
+      if (enabled('map')) await loadMap();
       return;
     }
     if (action === 'calendar-toggle') {
@@ -339,105 +322,60 @@ document.addEventListener('click', async (event) => {
       return;
     }
     if (action === 'export-calendar') {
-      exportCalendar(el.dataset.id ? [state.records.get(el.dataset.id)] : state.currentItems || []);
+      if (enabled('calendar'))
+        exportCalendar(
+          el.dataset.id ? [state.records.get(el.dataset.id)] : state.currentItems || [],
+        );
       return;
     }
-    if (action === 'new-story') {
+    if (action === 'new-story' || action === 'new-suggestion') {
       story();
-      return;
-    }
-    if (action === 'new-suggestion') {
-      story('Sugestão');
       return;
     }
     if (action === 'withdraw') {
       withdrawal();
       return;
     }
-    if (action === 'download-receipt') {
-      download(
-        'comprovante-voz-do-professor.txt',
-        `Comprovante de participação anônima\n\n${el.dataset.receipt}\n\nGuarde este código para retirar sua participação em Voz do Professor.\n`,
-        'text/plain;charset=utf-8',
-      );
-      return;
-    }
-    if (action === 'report-csv') {
-      reportCSV();
-      return;
-    }
-    if (action === 'report-json') {
-      download('resultados-agregados.json', JSON.stringify(state.report, null, 2));
-      return;
-    }
-    if (action === 'print') {
-      window.print();
-      return;
-    }
-    if (action === 'logout') {
-      await api('/account/logout', { method: 'POST', body: {} });
-      state.user = null;
-      state.csrf = null;
-      await refreshAccount();
-      await render();
-      return;
-    }
-    if (action === 'export-account') {
-      download(
-        'meus-dados-voz-do-professor.json',
-        JSON.stringify(await api('/account/privacy/export'), null, 2),
-      );
-      return;
-    }
-    if (action === 'privacy-request') {
-      privacyRequest();
-      return;
-    }
-    if (action === 'read-all' || action === 'read-notification') {
-      await api('/account/notifications/read', {
-        method: 'POST',
-        body: action === 'read-notification' ? { id: el.dataset.id } : {},
-      });
-      await refreshAccount();
-      await render();
-      return;
-    }
-    await adminAction(action, el, ctx);
   } catch (error) {
     toast(error.message);
   }
 });
-document.addEventListener('submit', async (event) => {
-  const form = event.target.closest('form[data-form]');
+document.addEventListener('submit', async (e) => {
+  const form = e.target.closest('form[data-form]');
   if (!form) return;
-  event.preventDefault();
+  e.preventDefault();
   const type = form.dataset.form,
     v = Object.fromEntries(new FormData(form));
-  const button = event.submitter;
-  form.querySelector('.form-error')?.remove();
-  if (button) button.disabled = true;
   try {
     if (type === 'filter') {
       state.filters[form.dataset.kind] = v;
       await render();
     } else if (type === 'global-search') {
       document.querySelector('#dialog').close();
-      const destination = '#/busca/' + encodeURIComponent(v.q.trim());
-      if (location.hash === destination) await render();
-      else location.hash = destination;
-    } else if (await submitVoice(type, form, v)) {
-    } else if (await submitProfile(type, form, v, ctx)) {
-    } else await submitAdmin(type, form, v, ctx);
+      const dest = '#/busca/' + encodeURIComponent(v.q.trim());
+      if (location.hash === dest) await render();
+      else location.hash = dest;
+    } else if (submitProfile(type, form, v)) {
+      await render();
+      toast(
+        state.cacheWarning
+          ? 'Armazenamento indisponível: alterações valem nesta sessão.'
+          : 'Preferências salvas somente neste navegador.',
+      );
+    }
   } catch (error) {
-    const message = document.createElement('p');
-    message.className = 'form-error';
-    message.setAttribute('role', 'alert');
-    message.textContent = error.message;
-    form.append(message);
     toast(error.message);
-  } finally {
-    if (button) button.disabled = false;
   }
+});
+// Clearing the country resets state/city, preventing invisible conflicting filters.
+document.addEventListener('change', (e) => {
+  const form = e.target.closest('form[data-form="filter"]');
+  if (!form) return;
+  if (e.target.name === 'country' && e.target.value !== 'BR') {
+    form.elements.state.value = '';
+    form.elements.city.value = '';
+  }
+  if (e.target.name === 'state') form.elements.city.value = '';
 });
 window.addEventListener('hashchange', () => {
   document.querySelector('#dialog').close();
@@ -445,21 +383,9 @@ window.addEventListener('hashchange', () => {
   void render();
 });
 window.addEventListener('pagehide', () => window.speechSynthesis?.cancel());
-async function boot() {
-  try {
-    const [session, config] = await Promise.all([api('/account/session'), api('/config')]);
-    state.user = session.user;
-    state.csrf = session.csrf;
-    state.config = config;
-    await refreshAccount();
-    await render();
-  } catch (error) {
-    document.querySelector('#main').innerHTML =
-      empty('Servidor indisponível', error.message) +
-      `<button class="button" data-action="reload">Recarregar</button>`;
-    document
-      .querySelector('[data-action="reload"]')
-      ?.addEventListener('click', () => location.reload());
-  }
-}
-void boot();
+window.addEventListener('storage', (e) => {
+  if (e.key === 'voz-local-v2') location.reload();
+});
+void render().catch((e) => {
+  document.querySelector('#main').innerHTML = empty('Servidor indisponível', e.message);
+});

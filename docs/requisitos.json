@@ -86,16 +86,16 @@
   {
     "id": "2.4",
     "title": "Cadastro automatizado de instituições",
-    "implementation": "Cadastro em lote por fluxo dos estabelecimentos RFB, com agendamento",
-    "verification": "Importações → CNPJ; CLI e teste RFB",
-    "files": "src/modules/catalog.js; server/modules/imports.js"
+    "implementation": "Rotina Python mensal em lotes diários limitados por tráfego/tempo, ativos CNAE85; catálogo parcial para hospedagem gratuita. APIs de notícias/vagas a cada6h.",
+    "verification": "Painel privado → Automação; origem RFB e limites de lote.",
+    "files": "scripts/rfb-sync.py; server/modules/rfb.js; server/modules/automation.js"
   },
   {
     "id": "2.5",
     "title": "Classificação por atividade educacional",
-    "implementation": "Filtro dos CNAEs de educação básica nas atividades principal e secundária",
-    "verification": "Importador RFB; teste de CNAE e situação",
-    "files": "src/modules/catalog.js; server/modules/imports.js"
+    "implementation": "Rotina Python mensal em lotes diários limitados por tráfego/tempo, ativos CNAE85; catálogo parcial para hospedagem gratuita. APIs de notícias/vagas a cada6h.",
+    "verification": "Painel privado → Automação; origem RFB e limites de lote.",
+    "files": "scripts/rfb-sync.py; server/modules/rfb.js; server/modules/automation.js"
   },
   {
     "id": "2.6",
@@ -135,9 +135,9 @@
   {
     "id": "2.11",
     "title": "Lista de escolas favoritas",
-    "implementation": "Favoritos institucionais persistentes por conta",
-    "verification": "Salvar instituição → Meu Perfil; teste de isolamento",
-    "files": "src/modules/catalog.js; server/modules/imports.js"
+    "implementation": "Preferências, região, favoritos e alertas calculados e armazenados somente no navegador, sem conta ou sincronização pessoal.",
+    "verification": "Seu espaço / Meus alertas; conferir que rede só baixa catálogo público.",
+    "files": "src/api.js; src/modules/profile.js; shared/filter.js"
   },
   {
     "id": "2.12",
@@ -212,9 +212,9 @@
   {
     "id": "3.10",
     "title": "Alertas personalizados de oportunidades",
-    "implementation": "Alertas internos por disciplina, formação, nível, território e raio",
-    "verification": "Publicar edital → Meus Alertas; teste de compatibilidade",
-    "files": "src/modules/catalog.js; server/domain.js"
+    "implementation": "Preferências, região, favoritos e alertas calculados e armazenados somente no navegador, sem conta ou sincronização pessoal.",
+    "verification": "Seu espaço / Meus alertas; conferir que rede só baixa catálogo público.",
+    "files": "src/api.js; src/modules/profile.js; shared/filter.js"
   },
   {
     "id": "3.11",
@@ -233,9 +233,9 @@
   {
     "id": "3.13",
     "title": "Lista de oportunidades salvas",
-    "implementation": "Editais salvos por conta",
-    "verification": "Salvar edital → Meu Perfil; teste de favoritos",
-    "files": "src/modules/catalog.js; server/domain.js"
+    "implementation": "Preferências, região, favoritos e alertas calculados e armazenados somente no navegador, sem conta ou sincronização pessoal.",
+    "verification": "Seu espaço / Meus alertas; conferir que rede só baixa catálogo público.",
+    "files": "src/api.js; src/modules/profile.js; shared/filter.js"
   },
   {
     "id": "3.14",
@@ -247,149 +247,149 @@
   {
     "id": "4.1",
     "title": "Canal de manifestação dos professores",
-    "implementation": "Formulário de relato de experiência",
-    "verification": "Voz do Professor → Compartilhar relato",
-    "files": "src/modules/voice.js; server/modules/research.js"
+    "implementation": "Participação substituída, por solicitação de 25/10/2026, por PDF preenchível enviado por e-mail; site não coleta respostas. Relatos autorizados publicados manualmente.",
+    "verification": "Voz do Professor → baixar PDF; painel privado → Relatos",
+    "files": "src/modules/voice.js; public/formularios/voz-do-professor.pdf; src/modules/admin.js"
   },
   {
     "id": "4.2",
     "title": "Relatos anônimos sobre condições de trabalho",
-    "implementation": "Relatos sem vínculo com usuário e com comprovante de retirada",
-    "verification": "Teste de anonimato e relato criptografado",
-    "files": "src/modules/voice.js; server/modules/research.js"
+    "implementation": "Participação substituída, por solicitação de 25/10/2026, por PDF preenchível enviado por e-mail; site não coleta respostas. Relatos autorizados publicados manualmente.",
+    "verification": "Voz do Professor → baixar PDF; painel privado → Relatos",
+    "files": "src/modules/voice.js; public/formularios/voz-do-professor.pdf; src/modules/admin.js"
   },
   {
     "id": "4.3",
     "title": "Enquetes periódicas",
-    "implementation": "Gerenciamento e coleta de enquetes com encerramento opcional",
-    "verification": "Voz → Enquete; Gestão → Pesquisas",
-    "files": "src/modules/voice.js; server/modules/research.js"
+    "implementation": "Participação substituída, por solicitação de 25/10/2026, por PDF preenchível enviado por e-mail; site não coleta respostas. Relatos autorizados publicados manualmente.",
+    "verification": "Voz do Professor → baixar PDF; painel privado → Relatos",
+    "files": "src/modules/voice.js; public/formularios/voz-do-professor.pdf; src/modules/admin.js"
   },
   {
     "id": "4.4",
     "title": "Pesquisa sobre jornada de trabalho",
-    "implementation": "Instrumento de jornada com perguntas por categorias",
-    "verification": "Voz → pesquisa de Jornada",
-    "files": "src/modules/voice.js; server/modules/research.js"
+    "implementation": "Participação substituída, por solicitação de 25/10/2026, por PDF preenchível enviado por e-mail; site não coleta respostas. Relatos autorizados publicados manualmente.",
+    "verification": "Voz do Professor → baixar PDF; painel privado → Relatos",
+    "files": "src/modules/voice.js; public/formularios/voz-do-professor.pdf; src/modules/admin.js"
   },
   {
     "id": "4.5",
     "title": "Pesquisa sobre vínculos empregatícios",
-    "implementation": "Instrumento de vínculo profissional",
-    "verification": "Voz → pesquisa de Vínculos",
-    "files": "src/modules/voice.js; server/modules/research.js"
+    "implementation": "Participação substituída, por solicitação de 25/10/2026, por PDF preenchível enviado por e-mail; site não coleta respostas. Relatos autorizados publicados manualmente.",
+    "verification": "Voz do Professor → baixar PDF; painel privado → Relatos",
+    "files": "src/modules/voice.js; public/formularios/voz-do-professor.pdf; src/modules/admin.js"
   },
   {
     "id": "4.6",
     "title": "Pesquisa sobre remuneração docente",
-    "implementation": "Instrumento sobre percepção da remuneração",
-    "verification": "Voz → pesquisa de Remuneração",
-    "files": "src/modules/voice.js; server/modules/research.js"
+    "implementation": "Participação substituída, por solicitação de 25/10/2026, por PDF preenchível enviado por e-mail; site não coleta respostas. Relatos autorizados publicados manualmente.",
+    "verification": "Voz do Professor → baixar PDF; painel privado → Relatos",
+    "files": "src/modules/voice.js; public/formularios/voz-do-professor.pdf; src/modules/admin.js"
   },
   {
     "id": "4.7",
     "title": "Pesquisa sobre infraestrutura escolar",
-    "implementation": "Instrumento sobre condições materiais da escola",
-    "verification": "Voz → pesquisa de Infraestrutura",
-    "files": "src/modules/voice.js; server/modules/research.js"
+    "implementation": "Participação substituída, por solicitação de 25/10/2026, por PDF preenchível enviado por e-mail; site não coleta respostas. Relatos autorizados publicados manualmente.",
+    "verification": "Voz do Professor → baixar PDF; painel privado → Relatos",
+    "files": "src/modules/voice.js; public/formularios/voz-do-professor.pdf; src/modules/admin.js"
   },
   {
     "id": "4.8",
     "title": "Pesquisa sobre materiais didáticos",
-    "implementation": "Instrumento sobre escolha e adaptação de materiais",
-    "verification": "Voz → pesquisa de Materiais didáticos",
-    "files": "src/modules/voice.js; server/modules/research.js"
+    "implementation": "Participação substituída, por solicitação de 25/10/2026, por PDF preenchível enviado por e-mail; site não coleta respostas. Relatos autorizados publicados manualmente.",
+    "verification": "Voz do Professor → baixar PDF; painel privado → Relatos",
+    "files": "src/modules/voice.js; public/formularios/voz-do-professor.pdf; src/modules/admin.js"
   },
   {
     "id": "4.9",
     "title": "Pesquisa sobre uso de inteligência artificial",
-    "implementation": "Instrumento sobre IA e autonomia",
-    "verification": "Voz → pesquisa de Inteligência artificial",
-    "files": "src/modules/voice.js; server/modules/research.js"
+    "implementation": "Participação substituída, por solicitação de 25/10/2026, por PDF preenchível enviado por e-mail; site não coleta respostas. Relatos autorizados publicados manualmente.",
+    "verification": "Voz do Professor → baixar PDF; painel privado → Relatos",
+    "files": "src/modules/voice.js; public/formularios/voz-do-professor.pdf; src/modules/admin.js"
   },
   {
     "id": "4.10",
     "title": "Painel coletivo de resultados",
-    "implementation": "Painel público com contagens protegidas e gráficos de barras",
-    "verification": "Painel coletivo; testes de agregação",
-    "files": "src/modules/voice.js; server/modules/research.js"
+    "implementation": "Coleta e agregação online retiradas pela exigência de nenhum dado de participante no site. Não há painel estatístico de respostas na versão 2; eventual relatório público exige curadoria externa.",
+    "verification": "Voz do Professor → baixar PDF; painel privado → Relatos",
+    "files": "src/modules/voice.js; public/formularios/voz-do-professor.pdf; src/modules/admin.js"
   },
   {
     "id": "4.11",
     "title": "Relatórios públicos de condições de trabalho",
-    "implementation": "Relatórios públicos de pesquisas e temas de relatos revisados",
-    "verification": "Painel coletivo → CSV / JSON / Relatório-PDF",
-    "files": "src/modules/voice.js; server/modules/research.js"
+    "implementation": "Coleta e agregação online retiradas pela exigência de nenhum dado de participante no site. Não há painel estatístico de respostas na versão 2; eventual relatório público exige curadoria externa.",
+    "verification": "Voz do Professor → baixar PDF; painel privado → Relatos",
+    "files": "src/modules/voice.js; public/formularios/voz-do-professor.pdf; src/modules/admin.js"
   },
   {
     "id": "4.12",
     "title": "Visualização de resultados por território",
-    "implementation": "Recortes por território somente quando seguros; supressão complementar",
-    "verification": "Resultados territoriais; teste contra subtração de células",
-    "files": "src/modules/voice.js; server/modules/research.js"
+    "implementation": "Coleta e agregação online retiradas pela exigência de nenhum dado de participante no site. Não há painel estatístico de respostas na versão 2; eventual relatório público exige curadoria externa.",
+    "verification": "Voz do Professor → baixar PDF; painel privado → Relatos",
+    "files": "src/modules/voice.js; public/formularios/voz-do-professor.pdf; src/modules/admin.js"
   },
   {
     "id": "4.13",
     "title": "Sugestões de melhorias para a plataforma",
-    "implementation": "Formulário de sugestões e leitura administrativa",
-    "verification": "Voz → Sugerir melhorias; Gestão → Escuta",
-    "files": "src/modules/voice.js; server/modules/research.js"
+    "implementation": "Participação substituída, por solicitação de 25/10/2026, por PDF preenchível enviado por e-mail; site não coleta respostas. Relatos autorizados publicados manualmente.",
+    "verification": "Voz do Professor → baixar PDF; painel privado → Relatos",
+    "files": "src/modules/voice.js; public/formularios/voz-do-professor.pdf; src/modules/admin.js"
   },
   {
     "id": "4.14",
     "title": "Proteção e anonimização dos dados",
-    "implementation": "Coleta mínima, consentimento, AES-GCM, comprovante por hash e supressão",
-    "verification": "Transparência; testes de criptografia e retirada",
-    "files": "src/modules/voice.js; server/modules/research.js"
+    "implementation": "Participação substituída, por solicitação de 25/10/2026, por PDF preenchível enviado por e-mail; site não coleta respostas. Relatos autorizados publicados manualmente.",
+    "verification": "Voz do Professor → baixar PDF; painel privado → Relatos",
+    "files": "src/modules/voice.js; public/formularios/voz-do-professor.pdf; src/modules/admin.js"
   },
   {
     "id": "5.1",
     "title": "Cadastro gratuito do professor",
-    "implementation": "Cadastro opcional com informações públicas abertas",
-    "verification": "Meu Perfil → Criar conta; testes HTTP",
-    "files": "src/modules/profile.js; server/modules/accounts.js"
+    "implementation": "Cadastro removido por solicitação expressa; sem login público.",
+    "verification": "Não há rota de cadastro; POST público responde 405.",
+    "files": "server/app.js; tests/api.test.js"
   },
   {
     "id": "5.2",
     "title": "Perfil profissional",
-    "implementation": "Perfil com município, disciplina, formação e níveis",
-    "verification": "Meu Perfil → Perfil profissional",
-    "files": "src/modules/profile.js; server/modules/accounts.js"
+    "implementation": "Preferências, região, favoritos e alertas calculados e armazenados somente no navegador, sem conta ou sincronização pessoal.",
+    "verification": "Seu espaço / Meus alertas; conferir que rede só baixa catálogo público.",
+    "files": "src/api.js; src/modules/profile.js; shared/filter.js"
   },
   {
     "id": "5.3",
     "title": "Configuração da região de interesse",
-    "implementation": "Cidades adicionais e referência/raio de interesse",
-    "verification": "Meu Perfil → Região e raio",
-    "files": "src/modules/profile.js; server/modules/accounts.js"
+    "implementation": "Preferências, região, favoritos e alertas calculados e armazenados somente no navegador, sem conta ou sincronização pessoal.",
+    "verification": "Seu espaço / Meus alertas; conferir que rede só baixa catálogo público.",
+    "files": "src/api.js; src/modules/profile.js; shared/filter.js"
   },
   {
     "id": "5.4",
     "title": "Central de notificações",
-    "implementation": "Central de avisos e marcação individual ou coletiva como lido",
-    "verification": "Meus Alertas; teste de isolamento",
-    "files": "src/modules/profile.js; server/modules/accounts.js"
+    "implementation": "Preferências, região, favoritos e alertas calculados e armazenados somente no navegador, sem conta ou sincronização pessoal.",
+    "verification": "Seu espaço / Meus alertas; conferir que rede só baixa catálogo público.",
+    "files": "src/api.js; src/modules/profile.js; shared/filter.js"
   },
   {
     "id": "5.5",
     "title": "Preferências de alertas",
-    "implementation": "Preferências para oportunidades, normas e notícias",
-    "verification": "Meu Perfil → Preferências de alertas",
-    "files": "src/modules/profile.js; server/modules/accounts.js"
+    "implementation": "Preferências, região, favoritos e alertas calculados e armazenados somente no navegador, sem conta ou sincronização pessoal.",
+    "verification": "Seu espaço / Meus alertas; conferir que rede só baixa catálogo público.",
+    "files": "src/api.js; src/modules/profile.js; shared/filter.js"
   },
   {
     "id": "5.6",
     "title": "Central de favoritos",
-    "implementation": "Central que reúne escolas, editais, pesquisas e publicações salvas",
-    "verification": "Meu Perfil → Seus favoritos",
-    "files": "src/modules/profile.js; server/modules/accounts.js"
+    "implementation": "Preferências, região, favoritos e alertas calculados e armazenados somente no navegador, sem conta ou sincronização pessoal.",
+    "verification": "Seu espaço / Meus alertas; conferir que rede só baixa catálogo público.",
+    "files": "src/api.js; src/modules/profile.js; shared/filter.js"
   },
   {
     "id": "5.7",
     "title": "Controle de privacidade",
-    "implementation": "Exportar, corrigir, solicitar atendimento, excluir conta e retirar participação",
-    "verification": "Privacidade e controle; testes de exclusão/exportação",
-    "files": "src/modules/profile.js; server/modules/accounts.js"
+    "implementation": "Preferências, região, favoritos e alertas calculados e armazenados somente no navegador, sem conta ou sincronização pessoal.",
+    "verification": "Seu espaço / Meus alertas; conferir que rede só baixa catálogo público.",
+    "files": "src/api.js; src/modules/profile.js; shared/filter.js"
   },
   {
     "id": "6.1",
@@ -408,9 +408,9 @@
   {
     "id": "6.3",
     "title": "Sistema de validação humana",
-    "implementation": "Declaração explícita, curador identificado e bloqueio sem fonte/resumo",
-    "verification": "Gestão → Revisar; testes de validação",
-    "files": "src/modules/admin.js; server/modules/admin.js"
+    "implementation": "Revisão explícita para relatos e correções manuais; notícias/vagas de fontes autorizadas importadas como metadados automáticos, sem IA.",
+    "verification": "Publicar relato exige confirmação; notícias automáticas identificam origem.",
+    "files": "server/modules/admin.js; server/modules/automation.js"
   },
   {
     "id": "6.4",
@@ -422,9 +422,9 @@
   {
     "id": "6.5",
     "title": "Sistema de atualização de bases públicas",
-    "implementation": "Importações de CNPJ/CNAE/Censo, arquivo normalizado, agendador e histórico",
-    "verification": "Gestão → Importações; CLI e testes",
-    "files": "src/modules/admin.js; server/modules/admin.js"
+    "implementation": "Rotina Python mensal em lotes diários limitados por tráfego/tempo, ativos CNAE85; catálogo parcial para hospedagem gratuita. APIs de notícias/vagas a cada6h.",
+    "verification": "Painel privado → Automação; origem RFB e limites de lote.",
+    "files": "scripts/rfb-sync.py; server/modules/rfb.js; server/modules/automation.js"
   },
   {
     "id": "6.6",
@@ -443,16 +443,16 @@
   {
     "id": "6.8",
     "title": "Painel estatístico administrativo",
-    "implementation": "Contas, acervo, respostas, estados da moderação, importações e acessos agregados",
-    "verification": "Gestão → Indicadores",
-    "files": "src/modules/admin.js; server/modules/admin.js"
+    "implementation": "Estado das rotinas e histórico de fontes. Métricas de visitantes e estatísticas individuais retiradas para minimizar dados.",
+    "verification": "Painel → Automação.",
+    "files": "src/modules/admin.js; server/modules/automation.js"
   },
   {
     "id": "6.9",
     "title": "Exportador de relatórios",
-    "implementation": "CSV/JSON agregado, impressão/PDF e exportação de apontamentos de qualidade",
-    "verification": "Resultados → exportações; Gestão → Qualidade",
-    "files": "src/modules/admin.js; server/modules/admin.js"
+    "implementation": "Calendário ICS local e formulário PDF. Exportação de respostas individuais/relatórios estatísticos retirada com a coleta online.",
+    "verification": "Oportunidades → Calendário; Voz → PDF.",
+    "files": "src/modules/catalog.js; src/modules/voice.js"
   },
   {
     "id": "6.10",

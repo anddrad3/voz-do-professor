@@ -1,37 +1,108 @@
+import { filterRecords, normalize } from '../shared/filter.js';
 export const state = {
-  user: null,
-  csrf: null,
-  config: {},
+  config: { features: {} },
   favorites: new Set(),
   records: new Map(),
   filters: {},
-  adminTab: 'content',
-  adminEdit: null,
   map: null,
   calendarOffset: 0,
+  profile: {},
+  preferences: { opportunities: true, news: true, legislation: true },
+  readAlerts: [],
+  cacheWarning: false,
+  view: 'grid',
 };
-export async function api(path, options = {}) {
-  const response = await fetch(`/api${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(state.csrf ? { 'X-CSRF-Token': state.csrf } : {}),
-      ...options.headers,
-    },
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  });
-  let data;
+const KEY = 'voz-local-v2';
+export function restoreLocal() {
   try {
-    data = await response.json();
+    const v = JSON.parse(localStorage.getItem(KEY) || '{}');
+    state.favorites = new Set(Array.isArray(v.favorites) ? v.favorites : []);
+    state.profile = v.profile || {};
+    state.view = v.view === 'list' ? 'list' : 'grid';
+    state.preferences = { ...state.preferences, ...v.preferences };
+    state.readAlerts = Array.isArray(v.readAlerts) ? v.readAlerts : [];
   } catch {
-    throw new Error('O servidor não respondeu. Confira se o serviço está em execução.');
+    state.cacheWarning = true;
   }
-  if (!response.ok) throw new Error(data.error || 'Falha na solicitação.');
-  return data;
+}
+export function saveLocal() {
+  try {
+    localStorage.setItem(
+      KEY,
+      JSON.stringify({
+        favorites: [...state.favorites],
+        profile: state.profile,
+        view: state.view,
+        preferences: state.preferences,
+        readAlerts: state.readAlerts.slice(-1000),
+      }),
+    );
+  } catch {
+    state.cacheWarning = true;
+  }
+}
+export function clearLocal() {
+  state.favorites.clear();
+  state.profile = {};
+  state.view = 'grid';
+  state.preferences = { opportunities: true, news: true, legislation: true };
+  state.readAlerts = [];
+  state.filters = {};
+  try {
+    localStorage.removeItem(KEY);
+    localStorage.removeItem('voz-theme');
+  } catch {}
+}
+export const enabled = (k) => state.config.features?.[k] === true;
+export async function api(path) {
+  const r = await fetch(`${import.meta.env?.BASE_URL || '/'}api${path}`, {
+    credentials: 'omit',
+    referrerPolicy: 'no-referrer',
+  });
+  if (!r.ok) throw new Error('Conteúdo indisponível. Tente novamente mais tarde.');
+  return r.json();
 }
 export async function loadRecords(kind, query = {}) {
-  const q = new URLSearchParams(Object.entries(query).filter(([, v]) => v !== '' && v != null));
-  const result = await api(`/records/${kind}?${q}`);
+  if (!enabled(kind === 'story' ? 'voice' : kind)) return [];
+  const result = await api(`/records/${kind}`);
   result.forEach((r) => state.records.set(r.id, r));
-  return result;
+  return filterRecords(result, query);
 }
+export function localAlerts(items) {
+  const p = state.profile,
+    prefs = state.preferences;
+  return items
+    .filter((r) => {
+      if (
+        r.kind === 'opportunity'
+          ? !prefs.opportunities
+          : r.type === 'Notícia'
+            ? !prefs.news
+            : !prefs.legislation
+      )
+        return false;
+      if (p.country && r.country && normalize(p.country) !== normalize(r.country)) return false;
+      if (p.state && r.state && normalize(p.state) !== normalize(r.state)) return false;
+      if (p.city && r.city && normalize(p.city) !== normalize(r.city)) return false;
+      if (
+        r.kind === 'opportunity' &&
+        p.discipline &&
+        r.discipline !== 'Todas' &&
+        !normalize(r.discipline + ' ' + r.title).includes(normalize(p.discipline))
+      )
+        return false;
+      if (
+        r.kind === 'opportunity' &&
+        Number(p.radius) > 0 &&
+        !filterRecords([r], { radius: p.radius, lat: p.lat, lng: p.lng }).length
+      )
+        return false;
+      return true;
+    })
+    .map((r) => ({
+      ...r,
+      alertKey: `${r.id}:${r.revision}`,
+      read: state.readAlerts.includes(`${r.id}:${r.revision}`),
+    }));
+}
+restoreLocal();

@@ -6,7 +6,7 @@ const walk = (dir) =>
   );
 for (const file of [
   'vite.config.js',
-  ...['src', 'server', 'scripts', 'tests'].flatMap(walk),
+  ...['src', 'server', 'scripts', 'tests', 'shared'].flatMap(walk),
 ].filter((f) => /\.(js|mjs)$/.test(f))) {
   const r = spawnSync(process.execPath, ['--check', file], { stdio: 'inherit' });
   if (r.status) process.exit(r.status);

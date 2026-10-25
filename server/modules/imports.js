@@ -13,7 +13,10 @@ const SOURCE_URLS = {
 };
 const number = (value) =>
   value == null || String(value).trim() === '' ? null : Number(String(value).replace(',', '.'));
-const digits = (value) => String(value || '').replace(/\D/g, '');
+const digits = (value) =>
+  String(value || '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '');
 function normalizeRow(row, format, options) {
   if (format === 'cnpj') {
     // RFB: Estabelecimentos, 30 semicolon-separated fields, no header, Latin-1.
@@ -104,6 +107,7 @@ export async function importData(db, input, options, actor) {
             'reviewer',
             'reviewedAt',
             'updatedAt',
+            'firstPublishedAt',
             'revision',
             'demo',
           ].includes(key),
@@ -156,6 +160,7 @@ export async function importData(db, input, options, actor) {
               reviewer,
               reviewedAt,
               updatedAt,
+              firstPublishedAt,
               revision,
               demo,
               ...old

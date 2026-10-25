@@ -1,3 +1,18 @@
+import { icon as faIcon } from '@fortawesome/fontawesome-svg-core';
+import {
+  faChalkboardUser,
+  faTableCellsLarge,
+  faList,
+  faScaleBalanced,
+  faClock,
+} from '@fortawesome/free-solid-svg-icons';
+const faIcons = {
+  'chalkboard-user': faChalkboardUser,
+  'layout-grid': faTableCellsLarge,
+  list: faList,
+  scale: faScaleBalanced,
+  clock: faClock,
+};
 import {
   createIcons,
   House,
@@ -90,8 +105,60 @@ export const h = (v) =>
     /[&<>"']/g,
     (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c],
   );
-export const icon = (name) => `<i data-lucide="${h(name)}" aria-hidden="true"></i>`;
-export const refreshIcons = () => createIcons({ icons });
+export const icon = (name) =>
+  faIcons[name]
+    ? faIcon(faIcons[name], {
+        attributes: { 'aria-hidden': 'true' },
+        classes: ['fa-icon'],
+      }).html.join('')
+    : `<i data-lucide="${h(name)}" aria-hidden="true"></i>`;
+export const refreshIcons = () => {
+  createIcons({ icons });
+  document.querySelectorAll('[data-fa]').forEach((el) => {
+    el.outerHTML = icon(el.dataset.fa);
+  });
+};
+export const viewControls = (ctx) =>
+  `<div class="view-controls" role="group" aria-label="Visualização dos cards"><button class="chip ${ctx.view === 'grid' ? 'active' : ''}" data-action="view" data-view="grid" aria-pressed="${ctx.view === 'grid'}">${icon('layout-grid')}Grade</button><button class="chip ${ctx.view === 'list' ? 'active' : ''}" data-action="view" data-view="list" aria-pressed="${ctx.view === 'list'}">${icon('list')}Lista</button></div>`;
+export const categoryLabel = (r) =>
+  r.kind === 'content'
+    ? r.type
+    : { story: 'Relato', school: 'Instituição', opportunity: 'Oportunidade', survey: 'Pesquisa' }[
+        r.kind
+      ] || 'Publicação';
+export function relativeTime(value, at = Date.now()) {
+  const elapsed = at - Date.parse(value);
+  if (!Number.isFinite(elapsed)) return '';
+  const days = Math.max(0, Math.floor(elapsed / 86400000));
+  if (!days) return 'hoje';
+  if (days === 1) return 'há 1 dia';
+  if (days < 30) return `há ${days} dias`;
+  if (days < 365) return `há ${Math.floor(days / 30)} ${days < 60 ? 'mês' : 'meses'}`;
+  const years = Math.floor(days / 365);
+  return `há ${years} ${years === 1 ? 'ano' : 'anos'}`;
+}
+export const publicationAge = (r) =>
+  `<p class="publication-age">${icon('clock')}No site ${h(relativeTime(r.firstPublishedAt || r.updatedAt))}${r.sourceDate ? ` · Fonte: ${fmtDate(r.sourceDate)}` : ''}</p>`;
+export const recordImage = (r) =>
+  /^[a-f0-9]{40}\.jpg$/.test(r.image || '') && r.imageCredit
+    ? `<figure class="record-image"><img src="${import.meta.env?.BASE_URL || '/'}media/${r.image}" alt="" loading="lazy" decoding="async" width="800" height="500"><figcaption>${h(r.imageCredit)}</figcaption></figure>`
+    : '';
+let masonryObserver;
+export function arrangeCards() {
+  masonryObserver?.disconnect();
+  const grids = [...document.querySelectorAll('main[data-view="grid"] .masonry')];
+  const layout = () =>
+    grids.forEach((grid) => {
+      grid.dataset.arranged = 'true';
+      for (const item of grid.children) {
+        const span = Math.ceil((item.getBoundingClientRect().height + 24) / 32);
+        item.style.gridRowEnd = `span ${Math.max(1, span)}`;
+      }
+    });
+  masonryObserver = new ResizeObserver(() => requestAnimationFrame(layout));
+  grids.forEach((grid) => [...grid.children].forEach((item) => masonryObserver.observe(item)));
+  requestAnimationFrame(layout);
+}
 export const fmtDate = (v) =>
   v
     ? new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(
@@ -144,14 +211,16 @@ export function card(r, ctx) {
     school: 'school',
     opportunity: 'briefcase-business',
     survey: 'messages-square',
+    story: 'messages-square',
   }[r.kind];
+  const features = ctx.config?.features || {};
   const info =
     r.kind === 'school'
       ? `${r.city} · ${r.state} · ${r.network}`
       : r.kind === 'opportunity'
         ? `${r.discipline} · ${r.city} / ${r.state}`
         : r.sourceName || r.topic;
-  return `<article class="card" data-record="${h(r.id)}"><div class="meta"><span class="source-icon">${icon(kindIcon)}</span><span>${h(info)}</span>${demo(r)}</div><h3><a href="${detailUrl(r)}">${h(r.title)}</a></h3><p class="body">${h((r.body || r.purpose || r.address || '').slice(0, 420))}</p>${r.kind === 'opportunity' ? `<div class="tags"><span class="tag accent">${h(r.situation || 'Consultar prazos')}</span><span class="tag">Até ${fmtDate(r.closes)}</span></div><p class="small-text">Remuneração: ${money(r.salary)}</p>` : ''}${r.kind === 'school' ? `<div class="tags"><span class="tag">${h(r.network)}</span>${r.distance != null ? `<span class="tag accent">${h(r.distance)} km</span>` : ''}<span class="tag">${h(r.crosscheck)}</span></div>` : ''}${r.kind === 'content' ? `<div class="tags"><span class="tag accent">${h(r.type)}</span>${(r.tags || []).map((t) => `<span class="tag">${h(t)}</span>`).join('')}</div>` : ''}<div class="card-footer">${r.kind === 'content' ? `<button class="button small" data-action="audio" data-id="${h(r.id)}" aria-label="Ouvir ${h(r.title)}">${icon('play')}<span>Ouvir</span></button>` : `<a class="button small" href="${detailUrl(r)}">${r.kind === 'survey' ? 'Participar' : 'Ver detalhes'}${icon('arrow-up-right')}</a>`}<div class="actions"><button class="icon-button" data-action="favorite" data-id="${h(r.id)}" aria-label="${saved ? 'Remover dos' : 'Adicionar aos'} favoritos" aria-pressed="${saved}">${icon(saved ? 'bookmark-check' : 'bookmark')}</button>${r.kind === 'content' ? `<button class="button small ghost" data-action="citation" data-id="${h(r.id)}">${icon('copy')}Citar</button>` : ''}</div></div></article>`;
+  return `<article class="card" data-record="${h(r.id)}">${recordImage(r)}<div class="category-row"><span class="tag accent">${icon(r.kind === 'content' && r.type === 'Legislação' ? 'scale' : kindIcon)}${h(categoryLabel(r))}</span>${r.scope ? `<span class="tag">${h(r.scope)}${r.state ? ' · ' + h(r.state) : ''}</span>` : ''}</div><div class="meta"><span class="source-icon">${icon(kindIcon)}</span><span>${h(info)}</span>${demo(r)}</div>${publicationAge(r)}<h3><a href="${detailUrl(r)}">${h(r.title)}</a></h3><p class="body">${h((r.excerpt || r.body || r.purpose || r.address || '').slice(0, 420))}</p>${r.kind === 'opportunity' ? `<div class="tags"><span class="tag accent">${h(r.situation || 'Consultar prazos')}</span><span class="tag">Até ${fmtDate(r.closes)}</span></div><p class="small-text">Remuneração: ${money(r.salary)}</p>` : ''}${r.kind === 'school' ? `<div class="tags"><span class="tag">${h(r.network)}</span>${r.distance != null ? `<span class="tag accent">${h(r.distance)} km</span>` : ''}<span class="tag">${h(r.crosscheck)}</span></div>` : ''}${r.kind === 'content' ? `<div class="tags">${(r.tags || []).map((t) => `<span class="tag">${h(t)}</span>`).join('')}</div>` : ''}<div class="card-footer">${r.kind === 'content' && features.audio !== false ? `<button class="button small" data-action="audio" data-id="${h(r.id)}" aria-label="Ouvir ${h(r.title)}">${icon('play')}<span>Ouvir</span></button>` : `<a class="button small" href="${detailUrl(r)}">${r.kind === 'survey' ? 'Participar' : 'Ver detalhes'}${icon('arrow-up-right')}</a>`}<div class="actions">${features.favorites !== false ? `<button class="icon-button" data-action="favorite" data-id="${h(r.id)}" aria-label="${saved ? 'Remover dos' : 'Adicionar aos'} favoritos" aria-pressed="${saved}">${icon(saved ? 'bookmark-check' : 'bookmark')}</button>` : ''}${r.kind === 'content' ? `<button class="button small ghost" data-action="citation" data-id="${h(r.id)}">${icon('copy')}Citar</button>` : ''}</div></div></article>`;
 }
 export function download(name, content, type = 'application/json') {
   const url = URL.createObjectURL(new Blob([content], { type }));

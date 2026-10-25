@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process';
 const env = {
   ...process.env,
   NODE_ENV: 'development',
-  DATABASE_PATH: process.env.DATABASE_PATH || 'data/demo.sqlite',
+  DATABASE_PATH: process.env.DATABASE_PATH || 'data/demo-v2.sqlite',
   DEMO_MODE: process.env.DEMO_MODE ?? 'true',
 };
 const children = [
