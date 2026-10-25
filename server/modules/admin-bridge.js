@@ -1,4 +1,4 @@
-import { mkdir, chmod, lstat, readdir, open, rename, unlink } from 'node:fs/promises';
+import { mkdir, chmod, lstat, readdir, open, rename, unlink, utimes } from 'node:fs/promises';
 import { constants } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { randomBytes } from 'node:crypto';
@@ -117,11 +117,13 @@ export async function relayAdminRequest(
     const until = Date.now() + timeout;
     while (Date.now() < until) {
       try {
+        const at = new Date();
+        await utimes(directory, at, at);
         return await readPrivate(resPath, RESPONSE_LIMIT * 1.4);
       } catch (error) {
         if (error.code !== 'ENOENT') throw error;
       }
-      await sleep(100);
+      await sleep(250);
     }
     throw new Error('Bridge timeout');
   } finally {
@@ -142,6 +144,10 @@ export async function startAdminBridge({
   let active = null,
     stopped = false;
   async function poll() {
+    // NFS can cache directory entries for 30s. SETATTR revalidates this private
+    // directory before enumeration, so a new request does not wait for cache expiry.
+    const at = new Date();
+    await utimes(directory, at, at);
     const files = await readdir(directory);
     const pending = [];
     for (const name of files) {
