@@ -1,10 +1,15 @@
 import { existsSync } from 'node:fs';
+import { chmod } from 'node:fs/promises';
+import { randomBytes } from 'node:crypto';
+import { join } from 'node:path';
+import { once } from 'node:events';
 if (existsSync('.env')) process.loadEnvFile('.env');
 const { openDatabase } = await import('./db.js');
 const { createApp, createAdminApp } = await import('./app.js');
 const { seedDemo } = await import('./seed.js');
 const { createAutomation } = await import('./modules/automation.js');
 const { scheduleRfb } = await import('./modules/rfb.js');
+const { startAdminBridge, privateDirectory } = await import('./modules/admin-bridge.js');
 const db = openDatabase();
 if (
   process.env.NODE_ENV === 'production' &&
@@ -18,21 +23,42 @@ const port = Number(process.env.PORT) || 3001,
 const server = createApp(db).listen(port, host, () =>
   console.log(`Voz do Professor: http://${host}:${port}`),
 );
-// Admin socket is deliberately loopback-only. Reach it remotely through an SSH tunnel.
+const bridgeDirectory =
+  process.env.ADMIN_ENABLED !== 'false' && process.env.ADMIN_BRIDGE_DIR
+    ? await privateDirectory(process.env.ADMIN_BRIDGE_DIR)
+    : null;
+const adminSocket = bridgeDirectory
+  ? join(bridgeDirectory, `admin-${randomBytes(6).toString('hex')}.sock`)
+  : null;
+// A private Unix socket avoids exposing any administrative TCP port on the host.
 const adminServer =
   process.env.ADMIN_ENABLED === 'false'
     ? null
     : createAdminApp(db, { automation }).listen(
-        Number(process.env.ADMIN_PORT) || 3002,
-        '127.0.0.1',
-        () => console.log('Gestão privada: http://127.0.0.1:3002 (somente local / túnel SSH)'),
+        adminSocket
+          ? { path: adminSocket }
+          : { port: Number(process.env.ADMIN_PORT) || 3002, host: '127.0.0.1' },
       );
+if (adminServer) {
+  await once(adminServer, 'listening');
+  if (adminSocket) await chmod(adminSocket, 0o600);
+  console.log(
+    adminSocket ? 'Gestão privada: socket local protegido.' : 'Gestão privada: somente loopback.',
+  );
+}
 if (process.env.AUTO_SYNC !== 'false') automation.start();
 const stopRfb = scheduleRfb(db);
+const stopAdminBridge = await startAdminBridge({
+  directory: adminServer ? process.env.ADMIN_BRIDGE_DIR : undefined,
+  port: Number(process.env.ADMIN_PORT) || 3002,
+  socketPath: adminSocket,
+  basePath: process.env.BASE_PATH || '',
+});
 for (const signal of ['SIGINT', 'SIGTERM'])
-  process.on(signal, () => {
+  process.on(signal, async () => {
     automation.stop();
     stopRfb();
+    await stopAdminBridge();
     adminServer?.close();
     server.close(() => {
       db.close();

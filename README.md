@@ -20,7 +20,7 @@ O endereço `relatos@exemplo.invalid` é propositalmente fictício e não recebe
 
 ## Painel exclusivo do proprietário
 
-**Estado da publicação Alwaysdata:** painel implementado e testado localmente; acesso remoto ainda pendente porque os servidores SSH e HTTP são separados. O painel não está exposto à internet. Veja [operação](docs/operacao.md).
+**Publicação Alwaysdata:** acesso privado por cliente SSH local e socket protegido no servidor. Abra o atalho local `tmp/Abrir-painel.cmd`; a senha está em `tmp/ACESSO-PAINEL.txt`, fora do Git. O painel não está exposto à internet. Veja [operação](docs/operacao.md).
 
 Não existe botão nem link administrativo no site. O serviço privado escuta somente em `127.0.0.1:3002`, separado da porta pública. Rode `npm run admin` uma única vez para criar o proprietário (sem e-mail, senha aleatória, hash scrypt). No desenvolvimento, defina antes `$env:DATABASE_PATH='data/demo-v2.sqlite'` no PowerShell. Em produção, use o banco configurado em `.env`.
 
