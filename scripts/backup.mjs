@@ -1,0 +1,11 @@
+import { existsSync, mkdirSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { backup } from 'node:sqlite';
+import { openDatabase } from '../server/db.js';
+if (existsSync('.env')) process.loadEnvFile('.env');
+mkdirSync('backups', { recursive: true });
+const db = openDatabase();
+const destination = resolve('backups', `voz-${Date.now()}.sqlite`);
+await backup(db, destination);
+db.close();
+console.log(destination);

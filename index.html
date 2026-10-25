@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#09090b" />
+    <meta name="description" content="Informação, autonomia e valorização docente." />
+    <link rel="icon" href="/logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <title>Voz do Professor</title>
+    <script type="module" src="/src/app.js"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Pular para o conteúdo</a>
+    <div class="glow" aria-hidden="true"></div>
+    <header class="header">
+      <div class="header-inner">
+        <a class="brand" href="#/inicio"
+          ><img src="/logo.png" alt="" width="36" height="36" /><span
+            >Voz do Professor<small>Informação que valoriza.</small></span
+          ></a
+        >
+        <div class="header-actions">
+          <button class="icon-button" data-action="search" aria-label="Buscar na plataforma">
+            <i data-lucide="search"></i></button
+          ><button
+            class="icon-button"
+            data-action="theme"
+            aria-label="Ativar modo claro"
+            id="theme-toggle"
+          >
+            <i data-lucide="sun"></i></button
+          ><a class="icon-button" href="#/alertas" aria-label="Meus alertas"
+            ><i data-lucide="bell"></i
+            ><span id="notification-count" class="notification-count" hidden></span></a
+          ><a class="account-link" href="#/perfil" id="account-link"
+            ><i data-lucide="user-round"></i><span>Entrar</span></a
+          >
+        </div>
+      </div>
+    </header>
+    <div class="shell">
+      <nav class="navigation" aria-label="Navegação principal" id="navigation"></nav>
+      <div id="environment-note"></div>
+      <main id="main" tabindex="-1"><div class="loading">Carregando sua plataforma…</div></main>
+      <footer class="footer">
+        <span>Voz do Professor <span class="dot">·</span> Autonomia e valorização docente</span
+        ><a href="#/transparencia"
+          >Fontes, metodologia e privacidade <i data-lucide="arrow-up-right"></i
+        ></a>
+      </footer>
+    </div>
+    <div id="toast" role="status" aria-live="polite" hidden></div>
+    <dialog id="dialog" aria-labelledby="dialog-title"><div id="dialog-content"></div></dialog>
+  </body>
+</html>

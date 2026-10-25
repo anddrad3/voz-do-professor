@@ -1,0 +1,464 @@
+[
+  {
+    "id": "1.1",
+    "title": "Portal de notícias educacionais",
+    "implementation": "Portal e cards de notícias com busca e detalhes",
+    "verification": "Direitos e Notícias → Notícia",
+    "files": "src/modules/catalog.js; server/domain.js"
+  },
+  {
+    "id": "1.2",
+    "title": "Biblioteca de legislação educacional",
+    "implementation": "Acervo categorizado de normas",
+    "verification": "Direitos e Notícias → Legislação",
+    "files": "src/modules/catalog.js; server/domain.js"
+  },
+  {
+    "id": "1.3",
+    "title": "Consulta ao piso salarial do magistério",
+    "implementation": "Consulta por ano, valor, jornada e fonte; valores inseridos por curadoria",
+    "verification": "Direitos e Notícias → Piso salarial → detalhes",
+    "files": "src/modules/catalog.js; server/domain.js"
+  },
+  {
+    "id": "1.4",
+    "title": "Consulta aos planos de carreira municipais",
+    "implementation": "Planos municipais pesquisáveis por cidade e UF",
+    "verification": "Direitos e Notícias → Plano de carreira + município",
+    "files": "src/modules/catalog.js; server/domain.js"
+  },
+  {
+    "id": "1.5",
+    "title": "Atualizações sobre decisões dos conselhos de educação",
+    "implementation": "Categoria dedicada aos conselhos de educação",
+    "verification": "Direitos e Notícias → Conselho de educação",
+    "files": "src/modules/catalog.js; server/domain.js"
+  },
+  {
+    "id": "1.6",
+    "title": "Explicador de legislação em linguagem simples",
+    "implementation": "Resumo em linguagem simples, obrigatório antes de publicar normas",
+    "verification": "Detalhes → Em linguagem simples; teste editorial",
+    "files": "src/modules/catalog.js; server/domain.js"
+  },
+  {
+    "id": "1.7",
+    "title": "Pesquisa por legislação e assunto",
+    "implementation": "Busca textual sem distinção de acentos e filtros combinados",
+    "verification": "Pesquisar assunto; teste de busca e filtros",
+    "files": "src/modules/catalog.js; server/domain.js"
+  },
+  {
+    "id": "1.8",
+    "title": "Histórico de mudanças legislativas",
+    "implementation": "Linha do tempo legislativa com data, descrição e fonte",
+    "verification": "Detalhes → Mudanças na norma",
+    "files": "src/modules/catalog.js; server/domain.js"
+  },
+  {
+    "id": "1.9",
+    "title": "Sistema de fontes verificadas",
+    "implementation": "Fonte original, data e responsável humano identificados",
+    "verification": "Detalhes → Fonte e responsabilidade editorial; teste de publicação",
+    "files": "src/modules/catalog.js; server/domain.js"
+  },
+  {
+    "id": "2.1",
+    "title": "Mapa interativo de instituições de ensino",
+    "implementation": "Mapa Leaflet com marcadores e popups vinculados aos perfis",
+    "verification": "Radar → Abrir mapa interativo",
+    "files": "src/modules/catalog.js; server/modules/imports.js"
+  },
+  {
+    "id": "2.2",
+    "title": "Localizador de escolas próximas",
+    "implementation": "Busca por município, referência aproximada pela base e geolocalização opcional",
+    "verification": "Radar → Município / centro das escolas",
+    "files": "src/modules/catalog.js; server/modules/imports.js"
+  },
+  {
+    "id": "2.3",
+    "title": "Filtro por município e região",
+    "implementation": "Filtros por município e UF",
+    "verification": "Radar → filtros territoriais",
+    "files": "src/modules/catalog.js; server/modules/imports.js"
+  },
+  {
+    "id": "2.4",
+    "title": "Cadastro automatizado de instituições",
+    "implementation": "Cadastro em lote por fluxo dos estabelecimentos RFB, com agendamento",
+    "verification": "Importações → CNPJ; CLI e teste RFB",
+    "files": "src/modules/catalog.js; server/modules/imports.js"
+  },
+  {
+    "id": "2.5",
+    "title": "Classificação por atividade educacional",
+    "implementation": "Filtro dos CNAEs de educação básica nas atividades principal e secundária",
+    "verification": "Importador RFB; teste de CNAE e situação",
+    "files": "src/modules/catalog.js; server/modules/imports.js"
+  },
+  {
+    "id": "2.6",
+    "title": "Cruzamento com o Censo Escolar",
+    "implementation": "Cruzamento exato por CNPJ/Inep e fila de divergências",
+    "verification": "Importador Censo; teste de cruzamento",
+    "files": "src/modules/catalog.js; server/modules/imports.js"
+  },
+  {
+    "id": "2.7",
+    "title": "Perfil informativo das instituições",
+    "implementation": "Perfil com endereço, rede, contatos e procedência disponíveis",
+    "verification": "Radar → Ver detalhes",
+    "files": "src/modules/catalog.js; server/modules/imports.js"
+  },
+  {
+    "id": "2.8",
+    "title": "Filtro por rede de ensino",
+    "implementation": "Filtro municipal, estadual, federal e privado",
+    "verification": "Radar → Rede de ensino; teste combinado",
+    "files": "src/modules/catalog.js; server/modules/imports.js"
+  },
+  {
+    "id": "2.9",
+    "title": "Pesquisa por distância",
+    "implementation": "Haversine para 5, 10, 25 e 50 km; ausência de coordenada não passa",
+    "verification": "Radar → Distância; teste de distância",
+    "files": "src/modules/catalog.js; server/modules/imports.js"
+  },
+  {
+    "id": "2.10",
+    "title": "Indicadores territoriais de instituições",
+    "implementation": "Distribuição por município/UF recalculada com filtros",
+    "verification": "Radar → indicadores acima do mapa",
+    "files": "src/modules/catalog.js; server/modules/imports.js"
+  },
+  {
+    "id": "2.11",
+    "title": "Lista de escolas favoritas",
+    "implementation": "Favoritos institucionais persistentes por conta",
+    "verification": "Salvar instituição → Meu Perfil; teste de isolamento",
+    "files": "src/modules/catalog.js; server/modules/imports.js"
+  },
+  {
+    "id": "2.12",
+    "title": "Acesso aos canais de candidatura",
+    "implementation": "Canal de candidatura exibido somente após conferência explícita",
+    "verification": "Gestão → Instituição → canal verificado; detalhes",
+    "files": "src/modules/catalog.js; server/modules/imports.js"
+  },
+  {
+    "id": "3.1",
+    "title": "Buscador de concursos públicos",
+    "implementation": "Busca e catálogo de concursos públicos",
+    "verification": "Oportunidades → Concurso público",
+    "files": "src/modules/catalog.js; server/domain.js"
+  },
+  {
+    "id": "3.2",
+    "title": "Buscador de processos seletivos simplificados",
+    "implementation": "Busca de contratações temporárias e processos simplificados",
+    "verification": "Oportunidades → Processo simplificado",
+    "files": "src/modules/catalog.js; server/domain.js"
+  },
+  {
+    "id": "3.3",
+    "title": "Monitor de seleções de instituições privadas",
+    "implementation": "Seleções privadas com fontes; cadastro e importação periódica de fontes normalizadas",
+    "verification": "Oportunidades → Seleção privada; manifesto de importação",
+    "files": "src/modules/catalog.js; server/domain.js"
+  },
+  {
+    "id": "3.4",
+    "title": "Central de cadastros de reserva",
+    "implementation": "Categoria própria de cadastro de reserva",
+    "verification": "Oportunidades → Cadastro de reserva",
+    "files": "src/modules/catalog.js; server/domain.js"
+  },
+  {
+    "id": "3.5",
+    "title": "Filtro por disciplina",
+    "implementation": "Filtro por componente curricular",
+    "verification": "Oportunidades → Disciplina",
+    "files": "src/modules/catalog.js; server/domain.js"
+  },
+  {
+    "id": "3.6",
+    "title": "Filtro por nível de ensino",
+    "implementation": "Filtro por etapa de ensino",
+    "verification": "Oportunidades → Nível de ensino",
+    "files": "src/modules/catalog.js; server/domain.js"
+  },
+  {
+    "id": "3.7",
+    "title": "Filtro por escolaridade exigida",
+    "implementation": "Filtro por formação exigida",
+    "verification": "Oportunidades → Escolaridade exigida",
+    "files": "src/modules/catalog.js; server/domain.js"
+  },
+  {
+    "id": "3.8",
+    "title": "Consulta à remuneração",
+    "implementation": "Valor remuneratório e jornada, quando cadastrados no edital",
+    "verification": "Cards e detalhes de oportunidade",
+    "files": "src/modules/catalog.js; server/domain.js"
+  },
+  {
+    "id": "3.9",
+    "title": "Calendário de inscrições e prazos",
+    "implementation": "Calendário mensal de abertura, fechamento e prova; exportação ICS",
+    "verification": "Oportunidades → Calendário / Exportar",
+    "files": "src/modules/catalog.js; server/domain.js"
+  },
+  {
+    "id": "3.10",
+    "title": "Alertas personalizados de oportunidades",
+    "implementation": "Alertas internos por disciplina, formação, nível, território e raio",
+    "verification": "Publicar edital → Meus Alertas; teste de compatibilidade",
+    "files": "src/modules/catalog.js; server/domain.js"
+  },
+  {
+    "id": "3.11",
+    "title": "Página detalhada de cada edital",
+    "implementation": "Página com cargo, município, remuneração, requisitos, documentos e prazos",
+    "verification": "Oportunidades → Ver detalhes",
+    "files": "src/modules/catalog.js; server/domain.js"
+  },
+  {
+    "id": "3.12",
+    "title": "Link direto para o edital oficial",
+    "implementation": "Links externos seguros para edital e inscrição oficiais",
+    "verification": "Detalhes → Edital oficial / Página de inscrição",
+    "files": "src/modules/catalog.js; server/domain.js"
+  },
+  {
+    "id": "3.13",
+    "title": "Lista de oportunidades salvas",
+    "implementation": "Editais salvos por conta",
+    "verification": "Salvar edital → Meu Perfil; teste de favoritos",
+    "files": "src/modules/catalog.js; server/domain.js"
+  },
+  {
+    "id": "3.14",
+    "title": "Acompanhamento de situação dos editais",
+    "implementation": "Situação calculada no fuso de São Paulo, com controle de suspensão/andamento",
+    "verification": "Filtro Situação e Gestão → estágio; teste de datas",
+    "files": "src/modules/catalog.js; server/domain.js"
+  },
+  {
+    "id": "4.1",
+    "title": "Canal de manifestação dos professores",
+    "implementation": "Formulário de relato de experiência",
+    "verification": "Voz do Professor → Compartilhar relato",
+    "files": "src/modules/voice.js; server/modules/research.js"
+  },
+  {
+    "id": "4.2",
+    "title": "Relatos anônimos sobre condições de trabalho",
+    "implementation": "Relatos sem vínculo com usuário e com comprovante de retirada",
+    "verification": "Teste de anonimato e relato criptografado",
+    "files": "src/modules/voice.js; server/modules/research.js"
+  },
+  {
+    "id": "4.3",
+    "title": "Enquetes periódicas",
+    "implementation": "Gerenciamento e coleta de enquetes com encerramento opcional",
+    "verification": "Voz → Enquete; Gestão → Pesquisas",
+    "files": "src/modules/voice.js; server/modules/research.js"
+  },
+  {
+    "id": "4.4",
+    "title": "Pesquisa sobre jornada de trabalho",
+    "implementation": "Instrumento de jornada com perguntas por categorias",
+    "verification": "Voz → pesquisa de Jornada",
+    "files": "src/modules/voice.js; server/modules/research.js"
+  },
+  {
+    "id": "4.5",
+    "title": "Pesquisa sobre vínculos empregatícios",
+    "implementation": "Instrumento de vínculo profissional",
+    "verification": "Voz → pesquisa de Vínculos",
+    "files": "src/modules/voice.js; server/modules/research.js"
+  },
+  {
+    "id": "4.6",
+    "title": "Pesquisa sobre remuneração docente",
+    "implementation": "Instrumento sobre percepção da remuneração",
+    "verification": "Voz → pesquisa de Remuneração",
+    "files": "src/modules/voice.js; server/modules/research.js"
+  },
+  {
+    "id": "4.7",
+    "title": "Pesquisa sobre infraestrutura escolar",
+    "implementation": "Instrumento sobre condições materiais da escola",
+    "verification": "Voz → pesquisa de Infraestrutura",
+    "files": "src/modules/voice.js; server/modules/research.js"
+  },
+  {
+    "id": "4.8",
+    "title": "Pesquisa sobre materiais didáticos",
+    "implementation": "Instrumento sobre escolha e adaptação de materiais",
+    "verification": "Voz → pesquisa de Materiais didáticos",
+    "files": "src/modules/voice.js; server/modules/research.js"
+  },
+  {
+    "id": "4.9",
+    "title": "Pesquisa sobre uso de inteligência artificial",
+    "implementation": "Instrumento sobre IA e autonomia",
+    "verification": "Voz → pesquisa de Inteligência artificial",
+    "files": "src/modules/voice.js; server/modules/research.js"
+  },
+  {
+    "id": "4.10",
+    "title": "Painel coletivo de resultados",
+    "implementation": "Painel público com contagens protegidas e gráficos de barras",
+    "verification": "Painel coletivo; testes de agregação",
+    "files": "src/modules/voice.js; server/modules/research.js"
+  },
+  {
+    "id": "4.11",
+    "title": "Relatórios públicos de condições de trabalho",
+    "implementation": "Relatórios públicos de pesquisas e temas de relatos revisados",
+    "verification": "Painel coletivo → CSV / JSON / Relatório-PDF",
+    "files": "src/modules/voice.js; server/modules/research.js"
+  },
+  {
+    "id": "4.12",
+    "title": "Visualização de resultados por território",
+    "implementation": "Recortes por território somente quando seguros; supressão complementar",
+    "verification": "Resultados territoriais; teste contra subtração de células",
+    "files": "src/modules/voice.js; server/modules/research.js"
+  },
+  {
+    "id": "4.13",
+    "title": "Sugestões de melhorias para a plataforma",
+    "implementation": "Formulário de sugestões e leitura administrativa",
+    "verification": "Voz → Sugerir melhorias; Gestão → Escuta",
+    "files": "src/modules/voice.js; server/modules/research.js"
+  },
+  {
+    "id": "4.14",
+    "title": "Proteção e anonimização dos dados",
+    "implementation": "Coleta mínima, consentimento, AES-GCM, comprovante por hash e supressão",
+    "verification": "Transparência; testes de criptografia e retirada",
+    "files": "src/modules/voice.js; server/modules/research.js"
+  },
+  {
+    "id": "5.1",
+    "title": "Cadastro gratuito do professor",
+    "implementation": "Cadastro opcional com informações públicas abertas",
+    "verification": "Meu Perfil → Criar conta; testes HTTP",
+    "files": "src/modules/profile.js; server/modules/accounts.js"
+  },
+  {
+    "id": "5.2",
+    "title": "Perfil profissional",
+    "implementation": "Perfil com município, disciplina, formação e níveis",
+    "verification": "Meu Perfil → Perfil profissional",
+    "files": "src/modules/profile.js; server/modules/accounts.js"
+  },
+  {
+    "id": "5.3",
+    "title": "Configuração da região de interesse",
+    "implementation": "Cidades adicionais e referência/raio de interesse",
+    "verification": "Meu Perfil → Região e raio",
+    "files": "src/modules/profile.js; server/modules/accounts.js"
+  },
+  {
+    "id": "5.4",
+    "title": "Central de notificações",
+    "implementation": "Central de avisos e marcação individual ou coletiva como lido",
+    "verification": "Meus Alertas; teste de isolamento",
+    "files": "src/modules/profile.js; server/modules/accounts.js"
+  },
+  {
+    "id": "5.5",
+    "title": "Preferências de alertas",
+    "implementation": "Preferências para oportunidades, normas e notícias",
+    "verification": "Meu Perfil → Preferências de alertas",
+    "files": "src/modules/profile.js; server/modules/accounts.js"
+  },
+  {
+    "id": "5.6",
+    "title": "Central de favoritos",
+    "implementation": "Central que reúne escolas, editais, pesquisas e publicações salvas",
+    "verification": "Meu Perfil → Seus favoritos",
+    "files": "src/modules/profile.js; server/modules/accounts.js"
+  },
+  {
+    "id": "5.7",
+    "title": "Controle de privacidade",
+    "implementation": "Exportar, corrigir, solicitar atendimento, excluir conta e retirar participação",
+    "verification": "Privacidade e controle; testes de exclusão/exportação",
+    "files": "src/modules/profile.js; server/modules/accounts.js"
+  },
+  {
+    "id": "6.1",
+    "title": "Painel administrativo",
+    "implementation": "Painel protegido por papel administrativo no servidor",
+    "verification": "Gestão; teste de acesso negado a professor",
+    "files": "src/modules/admin.js; server/modules/admin.js"
+  },
+  {
+    "id": "6.2",
+    "title": "Gerenciador de notícias e legislação",
+    "implementation": "Criação, edição, rascunho, revisão, publicação e arquivamento",
+    "verification": "Gestão → Notícias e direitos; teste editorial",
+    "files": "src/modules/admin.js; server/modules/admin.js"
+  },
+  {
+    "id": "6.3",
+    "title": "Sistema de validação humana",
+    "implementation": "Declaração explícita, curador identificado e bloqueio sem fonte/resumo",
+    "verification": "Gestão → Revisar; testes de validação",
+    "files": "src/modules/admin.js; server/modules/admin.js"
+  },
+  {
+    "id": "6.4",
+    "title": "Gerenciador de concursos e seleções",
+    "implementation": "Formulário completo de editais, fontes, prazos e situação",
+    "verification": "Gestão → Editais",
+    "files": "src/modules/admin.js; server/modules/admin.js"
+  },
+  {
+    "id": "6.5",
+    "title": "Sistema de atualização de bases públicas",
+    "implementation": "Importações de CNPJ/CNAE/Censo, arquivo normalizado, agendador e histórico",
+    "verification": "Gestão → Importações; CLI e testes",
+    "files": "src/modules/admin.js; server/modules/admin.js"
+  },
+  {
+    "id": "6.6",
+    "title": "Verificador de qualidade dos dados",
+    "implementation": "Detecção de duplicidades, fontes antigas, coordenadas faltantes e conflitos",
+    "verification": "Gestão → Qualidade; testes de importação",
+    "files": "src/modules/admin.js; server/modules/admin.js"
+  },
+  {
+    "id": "6.7",
+    "title": "Gerenciador de enquetes e pesquisas",
+    "implementation": "Criação de instrumentos, publicação, encerramento e proteção de perguntas respondidas",
+    "verification": "Gestão → Pesquisas; teste de imutabilidade",
+    "files": "src/modules/admin.js; server/modules/admin.js"
+  },
+  {
+    "id": "6.8",
+    "title": "Painel estatístico administrativo",
+    "implementation": "Contas, acervo, respostas, estados da moderação, importações e acessos agregados",
+    "verification": "Gestão → Indicadores",
+    "files": "src/modules/admin.js; server/modules/admin.js"
+  },
+  {
+    "id": "6.9",
+    "title": "Exportador de relatórios",
+    "implementation": "CSV/JSON agregado, impressão/PDF e exportação de apontamentos de qualidade",
+    "verification": "Resultados → exportações; Gestão → Qualidade",
+    "files": "src/modules/admin.js; server/modules/admin.js"
+  },
+  {
+    "id": "6.10",
+    "title": "Histórico de revisões e fontes",
+    "implementation": "Registro de revisões, fontes, autoria, publicação e ações administrativas",
+    "verification": "Gestão → Histórico; teste de revisão pública",
+    "files": "src/modules/admin.js; server/modules/admin.js"
+  }
+]

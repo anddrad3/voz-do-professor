@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="pt-PT" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voz do Professor</title>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            red: '#ef4444',
+                            dark: '#09090b', // zinc-950
+                            card: '#18181b', // zinc-900
+                        }
+                    },
+                    animation: {
+                        'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'scaleUp': 'scaleUp 0.2s ease-out forwards',
+                    },
+                    keyframes: {
+                        scaleUp: {
+                            '0%': { transform: 'scale(0.95)', opacity: '0' },
+                            '100%': { transform: 'scale(1)', opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        /* Barra de Scroll Personalizada e Fina */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+        }
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+        }
+
+        /* Animação de entrada dos posts */
+        .fade-up-enter { opacity: 0; transform: translateY(20px); transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+        .fade-up-enter-active { opacity: 1; transform: translateY(0); }
+    </style>
+</head>
+<body class="min-h-screen bg-brand-dark text-white font-sans antialiased selection:bg-brand-red/30 selection:text-red-100 transition-colors duration-700 overflow-x-hidden">
+
+    <!-- Efeito de Fundo Glow -->
+    <div class="fixed inset-0 z-[-1] pointer-events-none flex justify-center">
+        <div class="w-[800px] h-[500px] bg-brand-red/5 blur-[120px] rounded-full mt-[-200px]"></div>
+    </div>
+
+    <!-- Header Fixo Dinâmico -->
+    <header class="fixed top-0 left-0 w-full h-16 z-50 bg-brand-dark/80 backdrop-blur-xl border-b border-white/5 flex items-center justify-center px-4 sm:px-8 transition-all duration-500">
+        <div class="w-full md:w-[90%] max-w-[1400px] h-full relative">
+            
+            <!-- HEADER PADRÃO (FEED) -->
+            <div id="header-feed" class="absolute inset-0 flex items-center justify-between w-full h-full transition-all duration-300 opacity-100">
+                <!-- Informações do Perfil -->
+                <div class="flex items-center gap-3 cursor-pointer group z-10 h-full relative">
+                    <div class="relative flex items-center">
+                        <img src="logo.png" class="w-9 h-9 rounded-full object-cover border border-white/10 group-hover:border-brand-red/50 transition-colors" alt="Voz do Professor">
+                        <div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-brand-dark rounded-full"></div>
+                    </div>
+                    <div class="flex flex-col justify-center">
+                        <span class="font-semibold text-[15px] leading-tight tracking-tight text-white/90 group-hover:text-white transition-colors">Voz do Professor</span>
+                    </div>
+                </div>
+                
+                <!-- Ferramentas Globais (Pesquisa e Filtros) -->
+                <div class="flex items-center gap-1 sm:gap-2 z-10 bg-brand-dark/50 backdrop-blur-md rounded-full px-1.5 py-1.5">
+                    <button onclick="toggleSearch()" id="search-toggle-btn" class="p-2 bg-transparent hover:bg-white/5 rounded-full text-white/60 hover:text-white transition-all duration-300" title="Buscar na plataforma">
+                        <i data-lucide="search" class="w-[18px] h-[18px]"></i>
+                    </button>
+                    
+                    <div class="w-px h-4 bg-white/10 mx-0.5"></div>
+                    
+                    <button onclick="toggleFilters()" id="filter-toggle-btn" class="p-2 bg-transparent hover:bg-white/5 rounded-full text-white/60 hover:text-white transition-all duration-300" title="Alternar Filtros">
+                        <i id="filter-toggle-icon" data-lucide="sliders-horizontal" class="w-[18px] h-[18px] transition-colors"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- HEADER DO POST (THREAD) -->
+            <div id="header-post" class="absolute inset-0 flex items-center gap-3 w-full h-full transition-all duration-300 opacity-0 pointer-events-none z-20">
+                <button onclick="closePost()" class="p-2 bg-white/5 hover:bg-white/10 rounded-full transition-colors group flex-shrink-0">
+                    <i data-lucide="arrow-left" class="w-5 h-5 text-white/70 group-hover:text-white transition-colors"></i>
+                </button>
+                <span id="header-post-title" class="font-semibold text-[15px] sm:text-[16px] text-white/90 truncate pr-4 leading-tight">
+                    Publicação
+                </span>
+            </div>
+            
+            <!-- Barra de Pesquisa Animada -->
+            <div id="search-bar" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md opacity-0 pointer-events-none scale-95 transition-all duration-300 z-30">
+                <div class="relative flex items-center">
+                    <i data-lucide="search" class="absolute left-3 w-4 h-4 text-white/40"></i>
+                    <input type="text" id="search-input" placeholder="Pesquisar notícias, metodologias..." class="w-full bg-white/5 border border-white/10 focus:border-brand-red/50 focus:ring-1 focus:ring-brand-red/50 rounded-full py-2 pl-9 pr-10 text-sm text-white placeholder-white/30 outline-none transition-all">
+                    <button onclick="toggleSearch()" class="absolute right-2 p-1 text-white/40 hover:text-white transition-colors">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </header>
+
+    <!-- Overlay e Sheet de Filtros (MOBILE APENAS) -->
+    <div id="mobile-filters-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] hidden transition-opacity opacity-0 sm:hidden" onclick="toggleFilters()"></div>
+    
+    <div id="mobile-filters-sheet" class="fixed bottom-0 left-0 w-full bg-brand-card z-[70] rounded-t-3xl border-t border-white/10 p-6 flex flex-col gap-6 transform translate-y-full transition-transform duration-300 hidden max-h-[85vh] overflow-y-auto sm:hidden shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+        <div class="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-1"></div>
+        <div class="flex justify-between items-center mb-1">
+            <h3 class="text-lg font-semibold text-white">Filtros da Plataforma</h3>
+            <button onclick="toggleFilters()" class="p-2 text-white/40 hover:text-white bg-white/5 rounded-full transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        
+        <!-- Categorias Mobile -->
+        <div>
+            <h4 class="text-[11px] font-semibold text-white/40 uppercase tracking-wider mb-3">Tópicos e Categorias</h4>
+            <div class="flex flex-wrap gap-2" id="mobile-categories-container">
+                <!-- Renderizado via JS -->
+            </div>
+        </div>
+
+        <!-- Níveis Mobile -->
+        <div>
+            <h4 class="text-[11px] font-semibold text-white/40 uppercase tracking-wider mb-3">Nível de Ensino</h4>
+            <div class="flex flex-wrap gap-2" id="mobile-levels-container">
+                <!-- Renderizado via JS -->
+            </div>
+        </div>
+
+        <!-- Localização Mobile -->
+        <div>
+            <h4 class="text-[11px] font-semibold text-white/40 uppercase tracking-wider mb-3">Localização</h4>
+            <button onclick="openLocationModal()" class="w-full flex items-center justify-between p-3 bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 hover:border-white/10 rounded-xl text-sm font-medium text-white/80 transition-all">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="map-pin" class="w-[14px] h-[14px] text-brand-red"></i>
+                    <span id="mobile-location-btn-text">Nacional</span>
+                </div>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-white/30"></i>
+            </button>
+        </div>
+        
+        <button onclick="clearFilters(); toggleFilters()" class="w-full py-3 mt-2 bg-brand-dark hover:bg-brand-red/10 border border-white/5 hover:border-brand-red/20 text-white rounded-xl text-sm font-medium transition-colors">Limpar Todos os Filtros</button>
+    </div>
+
+    <!-- Contentor Principal Global -->
+    <div class="pt-16 w-full flex flex-col items-center">
+        
+        <!-- SECÇÃO DE FILTROS (DESKTOP APENAS - Inicia Oculta) -->
+        <div class="hidden sm:block sticky top-16 w-full z-40 pointer-events-none">
+            <div id="filters-container" class="hidden opacity-0 -translate-y-4 w-full bg-brand-dark/95 backdrop-blur-xl border-b border-white/5 transition-all duration-300 ease-in-out pointer-events-auto justify-center px-4 sm:px-8 shadow-sm shadow-black/50">
+                <div class="w-full md:w-[90%] max-w-[1400px] py-4 flex flex-col sm:flex-row sm:items-center justify-start gap-4 sm:gap-8">
+                    
+                    <!-- Categorias Principais com Setas Laterais -->
+                    <div class="flex items-center relative group w-full sm:flex-1 min-w-0">
+                        <button onclick="scrollCategories(-200)" class="absolute left-0 z-10 h-full px-2 bg-gradient-to-r from-brand-dark to-transparent text-white/50 hover:text-white transition-colors flex items-center justify-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100">
+                            <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                        </button>
+
+                        <div id="categories-scroll-wrapper" class="flex overflow-x-auto px-8 py-1 scroll-smooth w-full items-center">
+                            <div id="categories-container" class="inline-flex gap-2 bg-white/[0.03] p-1 rounded-2xl border border-white/5">
+                                <!-- Renderizado via JS -->
+                            </div>
+                        </div>
+
+                        <button onclick="scrollCategories(200)" class="absolute right-0 z-10 h-full px-2 bg-gradient-to-l from-brand-dark to-transparent text-white/50 hover:text-white transition-colors flex items-center justify-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100">
+                            <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+
+                    <!-- Sub-filtros Contextuais -->
+                    <div class="flex items-center gap-3 overflow-x-auto shrink-0 pb-1 sm:pb-0">
+                        
+                        <!-- 1. Níveis Escolares -->
+                        <div class="flex items-center gap-1 bg-white/[0.02] p-1 rounded-xl border border-white/5">
+                            <div id="levels-container" class="flex gap-1">
+                                <!-- Renderizado via JS -->
+                            </div>
+                        </div>
+
+                        <div class="w-px h-6 bg-white/10"></div>
+                        
+                        <!-- 2. Localização -->
+                        <button onclick="openLocationModal()" class="flex items-center gap-2 px-3 py-2 bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 hover:border-white/10 rounded-xl text-[12px] font-medium text-white/60 hover:text-white transition-all whitespace-nowrap group">
+                            <i data-lucide="map-pin" class="w-[14px] h-[14px] text-brand-red/70 group-hover:text-brand-red"></i> 
+                            <span id="location-btn-text">Nacional</span>
+                            <i data-lucide="chevron-down" class="w-[12px] h-[12px] opacity-50"></i>
+                        </button>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Conteúdo das Notícias -->
+        <main class="w-full md:w-[90%] max-w-[1400px] flex flex-col relative min-h-screen transition-all duration-700 mt-8 mb-32 px-4 sm:px-8">
+            
+            <!-- Feed de Notícias (Com Masonry Layout Desktop) -->
+            <div id="feed-container" class="columns-1 md:columns-2 lg:columns-3 gap-6 w-full space-y-0">
+                <!-- Posts renderizados via JS -->
+            </div>
+
+            <!-- View de Post Individual (com Thread) -->
+            <div id="single-post-container" class="hidden flex-col w-full gap-0">
+                <!-- Renderizado via JS -->
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Modal de Seleção de Localização -->
+    <div id="location-modal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4">
+        <!-- Fundo Escuro -->
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onclick="closeLocationModal()"></div>
+        
+        <!-- Caixa do Modal -->
+        <div class="relative bg-brand-card border border-white/10 rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl animate-scaleUp">
+            
+            <!-- Cabeçalho Modal -->
+            <div class="flex items-center justify-between p-5 sm:p-6 border-b border-white/5 shrink-0">
+                <div class="flex items-center gap-3">
+                    <i data-lucide="map-pin" class="w-5 h-5 text-brand-red"></i>
+                    <h3 class="text-lg font-semibold text-white/90">Onde?</h3>
+                </div>
+                <button onclick="closeLocationModal()" class="p-2 text-white/40 hover:text-white transition-colors rounded-full hover:bg-white/5">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <!-- Corpo Modal (Step 1 e Step 2) -->
+            <div class="flex flex-1 overflow-hidden h-[75vh] sm:h-[450px]">
+                
+                <!-- Coluna de Estados (Step 1 no Mobile) -->
+                <div id="state-section" class="flex w-full sm:w-1/2 flex-col border-r border-white/5 transition-all duration-300">
+                    <div class="p-3 sm:p-4 bg-white/[0.02] text-[11px] font-semibold text-white/40 uppercase tracking-wider shrink-0">
+                        Selecione o Estado
+                    </div>
+                    <div id="state-list" class="flex-1 overflow-y-auto p-2 scrollbar-hide flex flex-col gap-1">
+                        <!-- Gerado via JS -->
+                    </div>
+                </div>
+                
+                <!-- Coluna de Cidades (Step 2 no Mobile) -->
+                <div id="city-section" class="hidden w-full sm:w-1/2 flex-col bg-black/20 transition-all duration-300">
+                    <div class="p-3 sm:p-4 bg-white/[0.02] text-[11px] font-semibold text-white/40 uppercase tracking-wider shrink-0 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <!-- Botão Voltar apenas visível em Mobile -->
+                            <button onclick="clearStateSelection()" class="sm:hidden p-1.5 -ml-1.5 bg-white/5 hover:bg-white/10 rounded-md transition-colors flex items-center justify-center text-white/80">
+                                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                            </button>
+                            <span>Selecione a Cidade</span>
+                        </div>
+                        <span id="current-state-badge" class="px-2 py-0.5 rounded bg-brand-red/20 text-brand-red text-[10px]">-</span>
+                    </div>
+                    <div id="city-list" class="flex-1 overflow-y-auto p-2 scrollbar-hide flex flex-col gap-1">
+                        <!-- Gerado via JS -->
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Script da Aplicação -->
+    <script>
+        // --- DADOS DE LOCALIZAÇÃO (Estados e Cidades Reais) ---
+        const LOCATIONS = {
+            'SP': ['São Paulo', 'Campinas', 'Franca', 'Ribeirão Preto', 'Guarulhos', 'Osasco', 'Santos'],
+            'RJ': ['Rio de Janeiro', 'Niterói', 'São Gonçalo', 'Duque de Caxias', 'Petrópolis'],
+            'MG': ['Belo Horizonte', 'Uberlândia', 'Contagem', 'Juiz de Fora', 'Ouro Preto'],
+            'DF': ['Brasília', 'Taguatinga', 'Ceilândia'],
+            'BA': ['Salvador', 'Feira de Santana', 'Vitória da Conquista', 'Camaçari'],
+            'PR': ['Curitiba', 'Londrina', 'Maringá', 'Cascavel'],
+            'RS': ['Porto Alegre', 'Caxias do Sul', 'Pelotas', 'Santa Maria'],
+            'PE': ['Recife', 'Jaboatão dos Guararapes', 'Olinda', 'Caruaru']
+        };
+
+        // --- DADOS MOCK V2 ---
+        const POSTS = [
+            {
+                id: 1,
+                title: 'Novo Edital PNLD 2027 Prioriza Tecnologias',
+                source: 'Ministério da Educação',
+                location: 'Brasília · DF', 
+                level: 'Ensino Básico',
+                time: '2h',
+                readTime: '2 min',
+                content: 'O novo Programa Nacional do Livro Didático (PNLD) vai priorizar obras com recursos interativos digitais a partir de 2027. As editoras terão 6 meses para adaptar as submissões ao novo edital, que foca na acessibilidade e gamificação do aprendizado.',
+                tags: ['Políticas', 'Tecnologia'],
+                hasEvidence: false,
+                audioLength: '0:45',
+                citation: 'MINISTÉRIO DA EDUCAÇÃO. Novo PNLD prioriza recursos interativos. EduFoco, 2026.',
+                image: null,
+                thread: [
+                    {
+                        id: '1-1',
+                        source: 'Ministério da Educação',
+                        location: 'Brasília · DF',
+                        level: 'Ensino Básico',
+                        time: '1h',
+                        readTime: '1 min',
+                        content: 'Além disso, haverá um edital suplementar específico para a capacitação de professores, garantindo que o corpo docente de todo o país esteja preparado para utilizar plenamente estas novas ferramentas tecnológicas.',
+                        tags: ['Políticas'],
+                        hasEvidence: false,
+                        audioLength: '0:20',
+                        citation: 'MINISTÉRIO DA EDUCAÇÃO. Edital suplementar PNLD. EduFoco, 2026.',
+                        image: null
+                    },
+                    {
+                        id: '1-2',
+                        source: 'Fórum de Editoras',
+                        location: 'Nacional',
+                        level: 'Ensino Básico',
+                        time: '30m',
+                        readTime: '1 min',
+                        content: 'Em resposta, o consórcio de editoras pedagógicas já agendou uma reunião de emergência para alinhar a integração de componentes gamificados em materiais que já estavam prontos para impressão.',
+                        tags: ['Tecnologia'],
+                        hasEvidence: false,
+                        audioLength: '0:15',
+                        citation: 'FÓRUM DE EDITORAS. Reação ao novo PNLD. EduFoco, 2026.',
+                        image: null
+                    }
+                ]
+            },
+            {
+                id: 2,
+                title: 'Impacto da Aprendizagem Baseada em Projetos (PBL)',
+                source: 'Instituto de Pesquisa Edu',
+                location: 'Global',
+                level: 'Ensino Superior',
+                time: '5h',
+                readTime: '4 min',
+                content: 'Estudo longitudinal com 50.000 alunos demonstra que a aprendizagem baseada em projetos (PBL) retém 40% mais conhecimento a longo prazo comparada à aula expositiva tradicional. Os dados sugerem uma mudança urgente nos currículos das licenciaturas.',
+                image: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=800&auto=format&fit=crop',
+                tags: ['Pesquisa', 'Metodologias'],
+                hasEvidence: true,
+                evidenceLink: 'Nature Education (2026)',
+                audioLength: '1:20',
+                citation: 'INSTITUTO DE PESQUISA EDU. Impacto da aprendizagem baseada em projetos. EduFoco, 2026.',
+                thread: []
+            },
+            {
+                id: 3,
+                title: 'Reestruturação dos Itinerários Formativos em SP',
+                source: 'Secretaria da Educação',
+                location: 'Franca · SP', 
+                level: 'Ensino Médio',
+                time: '1d',
+                readTime: '1 min',
+                content: 'Aprovada a reestruturação dos itinerários formativos para as escolas da região. A carga horária de formação geral básica regressa a 2.400 horas, garantindo maior foco em disciplinas essenciais como Matemática e Língua Portuguesa antes da especialização.',
+                tags: ['Legislação'],
+                hasEvidence: false,
+                audioLength: '0:30',
+                citation: 'SECRETARIA DA EDUCAÇÃO SP. Reestruturação dos itinerários formativos. EduFoco, 2026.',
+                image: 'https://images.unsplash.com/photo-1577896851231-70ef18881754?q=80&w=800&auto=format&fit=crop',
+                thread: []
+            },
+            {
+                id: 4,
+                title: 'Inteligência Artificial na Correção de Redações',
+                source: 'Fórum de Inovação',
+                location: 'Nacional',
+                level: 'Todos',
+                time: '2d',
+                readTime: '3 min',
+                content: 'A inteligência artificial generativa como assistente de correção de redações: Primeiros testes mostram redução de 60% no tempo gasto pelos professores, permitindo um feedback mais personalizado focado na argumentação e não apenas na gramática.',
+                tags: ['Tecnologia', 'Metodologias'],
+                hasEvidence: true,
+                audioLength: '2:15',
+                citation: 'FÓRUM DE INOVAÇÃO. IA na correção de textos. EduFoco, 2026.',
+                image: null,
+                thread: []
+            }
+        ];
+
+        const CATEGORIAS = ['Recentes', 'Legislação', 'Políticas', 'Pesquisa', 'Metodologias', 'Tecnologia'];
+        const NIVEIS = ['Todos', 'Infantil', 'Básico', 'Médio', 'Superior'];
+
+        // --- ESTADO ---
+        const State = {
+            view: 'feed', 
+            selectedPostId: null,
+            feedScrollPosition: 0, 
+            isFiltersOpen: false, 
+            activeCategory: 'Recentes',
+            activeLevel: 'Todos',
+            searchQuery: '',
+            isSearchOpen: false,
+            location: {
+                state: 'Nacional',
+                city: 'Todas'      
+            },
+            audio: {
+                playingId: null,
+                progress: 0,
+                interval: null
+            }
+        };
+
+        // --- RENDERIZAÇÃO GERAL ---
+        function renderApp() {
+            const feedContainer = document.getElementById('feed-container');
+            const singleContainer = document.getElementById('single-post-container');
+            
+            const desktopFiltersWrapper = document.getElementById('filters-container');
+            const icon = document.getElementById('filter-toggle-icon');
+            
+            const headerFeed = document.getElementById('header-feed');
+            const headerPost = document.getElementById('header-post');
+            const headerPostTitle = document.getElementById('header-post-title');
+
+            if (State.view === 'post') {
+                const post = POSTS.find(p => p.id === State.selectedPostId);
+
+                if (State.isFiltersOpen) {
+                    State.isFiltersOpen = false;
+                    document.body.style.overflow = '';
+                    
+                    document.getElementById('mobile-filters-overlay').classList.add('hidden', 'opacity-0');
+                    document.getElementById('mobile-filters-overlay').classList.remove('opacity-100');
+                    document.getElementById('mobile-filters-sheet').classList.add('hidden', 'translate-y-full');
+                    document.getElementById('mobile-filters-sheet').classList.remove('flex', 'translate-y-0');
+                    
+                    icon.classList.remove('text-brand-red');
+                    desktopFiltersWrapper.classList.add('hidden', 'opacity-0', '-translate-y-4');
+                    desktopFiltersWrapper.classList.remove('flex', 'opacity-100', 'translate-y-0');
+                }
+
+                feedContainer.classList.add('hidden');
+                singleContainer.classList.remove('hidden');
+                singleContainer.classList.add('flex');
+                
+                headerFeed.classList.add('opacity-0', 'pointer-events-none');
+                headerFeed.classList.remove('opacity-100');
+                
+                headerPost.classList.remove('opacity-0', 'pointer-events-none');
+                headerPost.classList.add('opacity-100');
+                
+                headerPostTitle.innerText = `Publicação: ${post.title}`;
+                
+                renderSinglePost();
+            } else {
+                feedContainer.classList.remove('hidden');
+                singleContainer.classList.add('hidden');
+                singleContainer.classList.remove('flex');
+                
+                // Restaura a Header Original APENAS se a barra de pesquisa NÃO estiver ativa
+                if (!State.isSearchOpen) {
+                    headerFeed.classList.remove('opacity-0', 'pointer-events-none');
+                    headerFeed.classList.add('opacity-100');
+                } else {
+                    headerFeed.classList.add('opacity-0', 'pointer-events-none');
+                    headerFeed.classList.remove('opacity-100');
+                }
+                
+                headerPost.classList.add('opacity-0', 'pointer-events-none');
+                headerPost.classList.remove('opacity-100');
+
+                renderFeedList();
+            }
+            lucide.createIcons();
+        }
+
+        // --- RENDERIZAÇÃO DE LOCALIZAÇÃO (MODAL) ---
+        function renderLocationModal() {
+            const stateList = document.getElementById('state-list');
+            const cityList = document.getElementById('city-list');
+            const citySection = document.getElementById('city-section');
+            const stateSection = document.getElementById('state-section');
+            const currentStateBadge = document.getElementById('current-state-badge');
+            
+            // Renderiza Estados
+            let statesHTML = `<button onclick="selectLocation('Nacional', 'Todas')" class="w-full text-left px-4 py-3 rounded-xl transition-colors text-[13px] ${State.location.state === 'Nacional' ? 'bg-brand-red/10 text-brand-red font-medium border border-brand-red/20' : 'hover:bg-white/5 text-white/70 border border-transparent'}">Todo o Brasil (Nacional)</button>`;
+            
+            for (const uf in LOCATIONS) {
+                statesHTML += `<button onclick="pickState('${uf}')" class="w-full text-left px-4 py-3 rounded-xl transition-colors text-[13px] flex justify-between items-center ${State.location.state === uf ? 'bg-brand-red/10 text-brand-red font-medium border border-brand-red/20' : 'hover:bg-white/5 text-white/70 border border-transparent'}">
+                    ${uf} <i data-lucide="chevron-right" class="w-4 h-4 opacity-30"></i>
+                </button>`;
+            }
+            stateList.innerHTML = statesHTML;
+
+            // Renderiza Cidades ou Estados (Gestão do Step 1 / Step 2 no Mobile)
+            if (State.location.state !== 'Nacional' && LOCATIONS[State.location.state]) {
+                // Estado selecionado (Mostra Cidades)
+                citySection.classList.remove('hidden');
+                citySection.classList.add('flex', 'h-full');
+                currentStateBadge.innerText = State.location.state;
+                
+                // No Mobile (Step 2): Esconder secção de estados
+                stateSection.classList.remove('flex');
+                stateSection.classList.add('hidden', 'sm:flex');
+
+                let citiesHTML = `<button onclick="selectLocation('${State.location.state}', 'Todas')" class="w-full text-left px-4 py-3 rounded-xl transition-colors text-[13px] ${State.location.city === 'Todas' ? 'bg-brand-red/10 text-brand-red font-medium border border-brand-red/20' : 'hover:bg-white/5 text-white/70 border border-transparent'}">Todas as cidades</button>`;
+                
+                LOCATIONS[State.location.state].forEach(city => {
+                    citiesHTML += `<button onclick="selectLocation('${State.location.state}', '${city}')" class="w-full text-left px-4 py-3 rounded-xl transition-colors text-[13px] ${State.location.city === city ? 'bg-brand-red/10 text-brand-red font-medium border border-brand-red/20' : 'hover:bg-white/5 text-white/70 border border-transparent'}">${city}</button>`;
+                });
+                cityList.innerHTML = citiesHTML;
+            } else {
+                // Sem estado (Nacional) - Step 1: Mostrar Estados
+                citySection.classList.add('hidden');
+                citySection.classList.remove('flex', 'h-full');
+
+                stateSection.classList.remove('hidden', 'sm:flex');
+                stateSection.classList.add('flex', 'w-full', 'h-full');
+            }
+            lucide.createIcons();
+        }
+
+        function openLocationModal() {
+            const modal = document.getElementById('location-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            // Bloqueia Scroll da página enquanto escolhe a localização
+            document.body.style.overflow = 'hidden';
+            
+            renderLocationModal();
+        }
+
+        function closeLocationModal() {
+            const modal = document.getElementById('location-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            
+            // Restaura o Scroll da página (mas mantém bloqueado se o menu de filtros mobile estiver aberto)
+            if (!(State.isFiltersOpen && window.innerWidth < 640)) {
+                document.body.style.overflow = '';
+            }
+        }
+
+        function clearStateSelection() {
+            // Função do botão Voltar (Step 2 -> Step 1) no Mobile
+            State.location.state = 'Nacional';
+            State.location.city = 'Todas';
+            renderLocationModal();
+        }
+
+        function pickState(uf) {
+            State.location.state = uf;
+            State.location.city = 'Todas'; 
+            renderLocationModal();
+        }
+
+        function selectLocation(state, city) {
+            State.location.state = state;
+            State.location.city = city;
+            
+            const btnText = state === 'Nacional' ? 'Nacional' : (city === 'Todas' ? `Estado: ${state}` : `${city} - ${state}`);
+            
+            document.getElementById('location-btn-text').innerText = btnText;
+            if(document.getElementById('mobile-location-btn-text')) {
+                document.getElementById('mobile-location-btn-text').innerText = btnText;
+            }
+
+            closeLocationModal();
+            renderApp();
+        }
+
+        // Renderiza Categorias e Níveis
+        function renderCategories() {
+            const html = CATEGORIAS.map(cat => `
+                <button
+                    onclick="setActiveCategory('${cat}')"
+                    class="px-4 py-1.5 rounded-xl font-medium text-[13px] whitespace-nowrap transition-all duration-300 ease-out 
+                    ${State.activeCategory === cat 
+                        ? 'bg-brand-red/10 text-brand-red border border-brand-red/20' 
+                        : 'bg-transparent text-white/40 hover:text-white hover:bg-white/5 border border-transparent'}"
+                >
+                    ${cat}
+                </button>
+            `).join('');
+
+            document.getElementById('categories-container').innerHTML = html;
+            if(document.getElementById('mobile-categories-container')) {
+                document.getElementById('mobile-categories-container').innerHTML = html;
+            }
+        }
+
+        function renderLevels() {
+            const html = NIVEIS.map(nivel => `
+                <button 
+                    onclick="setActiveLevel('${nivel}')"
+                    class="text-[12px] px-3 py-1.5 rounded-lg transition-all whitespace-nowrap font-medium
+                    ${State.activeLevel === nivel 
+                        ? 'bg-brand-red/10 text-brand-red border border-brand-red/20' 
+                        : 'text-white/40 hover:text-white hover:bg-white/5 border border-transparent'}"
+                >
+                    ${nivel}
+                </button>
+            `).join('');
+
+            document.getElementById('levels-container').innerHTML = html;
+            if(document.getElementById('mobile-levels-container')) {
+                document.getElementById('mobile-levels-container').innerHTML = html;
+            }
+        }
+
+        // --- FUNÇÕES DE CRIAÇÃO DE HTML ---
+
+        function createPostHTML(post, index = 0, isThreadReply = false) {
+            const clickAction = (State.view === 'feed' && !isThreadReply) ? `onclick="openPost(${post.id})"` : '';
+            const cursorClass = (State.view === 'feed' && !isThreadReply) ? 'cursor-pointer hover:bg-brand-card/60 hover:border-white/10 hover:shadow-lg hover:shadow-black/20' : '';
+            
+            const bgClass = isThreadReply 
+                ? 'bg-brand-card/40 backdrop-blur-md border border-white/5 rounded-2xl p-5 sm:p-6 shadow-sm' 
+                : 'bg-brand-card/30 backdrop-blur-sm border border-white/5 rounded-3xl p-6 sm:p-8 shadow-md';
+            
+            const masonryClass = (State.view === 'feed' && !isThreadReply) ? 'break-inside-avoid mb-6 w-full inline-block' : 'w-full';
+
+            const stopProp = (State.view === 'feed') ? 'event.stopPropagation();' : '';
+            const textContent = highlightSearch(post.content, State.searchQuery);
+
+            return `
+                <article ${clickAction} class="${bgClass} ${masonryClass} flex flex-col relative group transition-all duration-500 fade-up-enter fade-up-enter-active ${cursorClass}" style="transition-delay: ${index * 50}ms">
+                    
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+                        <div class="flex items-center gap-2 text-[12px] font-medium">
+                            <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-brand-red/20 to-brand-red/5 flex items-center justify-center border border-brand-red/20 z-10">
+                                <i data-lucide="building-2" class="w-3 h-3 text-brand-red"></i>
+                            </div>
+                            <span class="text-white/90 font-semibold">${post.source}</span>
+                            <span class="text-white/20">•</span>
+                            <span class="text-white/40">${post.time}</span>
+                            ${!isThreadReply ? `
+                                <span class="text-white/20">•</span>
+                                <span class="text-white/40 hidden sm:inline">${post.location}</span>
+                            ` : ''}
+                        </div>
+                        ${!isThreadReply ? `
+                            <div class="flex items-center gap-3 text-[12px] text-white/40">
+                                <span class="flex items-center gap-1.5 bg-white/5 px-2.5 py-1 rounded-md">
+                                    <i data-lucide="layers" class="w-3 h-3"></i> ${post.level}
+                                </span>
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <p class="post-content text-white/80 font-light whitespace-pre-wrap tracking-wide transition-all duration-500 text-[15px] sm:text-[16px] leading-relaxed">${textContent}</p>
+
+                    ${post.image ? `
+                        <div class="mt-6 rounded-2xl overflow-hidden border border-white/5 relative aspect-[21/9] sm:aspect-[21/7] bg-black/50">
+                            <img src="${post.image}" alt="Ilustração da notícia" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-700 ${State.view === 'feed' ? 'group-hover:scale-105' : ''}" loading="lazy" />
+                        </div>
+                    ` : ''}
+
+                    <div class="mt-5 ${isThreadReply ? 'pt-0 mt-4' : 'pt-5 border-t border-white/5'} flex flex-wrap items-center justify-between gap-4">
+                        <div class="flex items-center gap-3">
+                            <div onclick="${stopProp} toggleAudio('${post.id}')" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 hover:bg-brand-red/10 hover:border-brand-red/20 transition-colors cursor-pointer group w-auto min-w-[80px] z-10">
+                                <div id="audio-icon-${post.id}" class="flex items-center justify-center w-4">
+                                    ${State.audio.playingId === String(post.id) 
+                                        ? `<div class="flex gap-[2px] h-3 items-end">
+                                             <div class="w-1 bg-brand-red rounded-full animate-pulse-fast h-full"></div>
+                                             <div class="w-1 bg-brand-red rounded-full animate-pulse-fast h-2/3" style="animation-delay: 0.1s"></div>
+                                             <div class="w-1 bg-brand-red rounded-full animate-pulse-fast h-full" style="animation-delay: 0.2s"></div>
+                                           </div>` 
+                                        : `<i data-lucide="play" class="w-3.5 h-3.5 text-white/50 group-hover:text-brand-red fill-transparent group-hover:fill-brand-red/20 transition-all"></i>`}
+                                </div>
+                                <span class="text-[12px] font-medium text-white/50 group-hover:text-brand-red font-mono transition-colors">${post.audioLength}</span>
+                                
+                                <div id="audio-progress-wrapper-${post.id}" class="w-16 h-1 bg-white/10 rounded-full overflow-hidden ml-1 hidden sm:${State.audio.playingId === String(post.id) ? 'block' : 'hidden'}">
+                                    <div id="audio-progress-${post.id}" class="h-full bg-gradient-to-r from-brand-red to-orange-500 rounded-full transition-all duration-100 ease-linear" style="width: ${State.audio.playingId === String(post.id) ? State.audio.progress : 0}%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-1 z-10">
+                            <button onclick="${stopProp}" class="p-2 text-white/30 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
+                                <i data-lucide="bookmark" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="${stopProp} copyCitation('${post.id}', \`${post.citation}\`)" class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-medium text-white/40 hover:text-white hover:bg-white/5 transition-colors group">
+                                <i data-lucide="copy" class="w-3.5 h-3.5 group-hover:scale-110 transition-transform"></i>
+                                <span id="cite-text-${post.id}">Citar</span>
+                            </button>
+                        </div>
+                    </div>
+                </article>
+            `;
+        }
+
+        function renderFeedList() {
+            const container = document.getElementById('feed-container');
+            
+            const filteredPosts = POSTS.filter(post => {
+                const matchCategory = State.activeCategory === 'Recentes' || post.tags.includes(State.activeCategory);
+                const matchLevel = State.activeLevel === 'Todos' || post.level.includes(State.activeLevel);
+                const matchSearch = State.searchQuery === '' || 
+                                    post.content.toLowerCase().includes(State.searchQuery.toLowerCase()) ||
+                                    post.source.toLowerCase().includes(State.searchQuery.toLowerCase());
+                
+                // Filtro de Localização
+                let matchLocation = true;
+                if (State.location.state !== 'Nacional') {
+                    matchLocation = post.location.includes(State.location.state) || post.location === 'Global' || post.location === 'Nacional';
+                    
+                    if (matchLocation && State.location.city !== 'Todas' && post.location !== 'Global' && post.location !== 'Nacional') {
+                        matchLocation = post.location.includes(State.location.city);
+                    }
+                }
+
+                return matchCategory && matchLevel && matchSearch && matchLocation;
+            });
+
+            if (filteredPosts.length === 0) {
+                container.classList.remove('columns-1', 'md:columns-2', 'lg:columns-3');
+                container.classList.add('flex', 'flex-col', 'items-center');
+                
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center p-16 text-center text-white/40 fade-up-enter fade-up-enter-active">
+                        <i data-lucide="inbox" class="w-12 h-12 mb-4 opacity-50"></i>
+                        <p class="text-lg font-medium text-white/60">Nenhum resultado encontrado.</p>
+                        <p class="text-sm mt-1">Tente ajustar os filtros ou a sua pesquisa.</p>
+                        <button onclick="clearFilters()" class="mt-4 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm transition-colors">Limpar Tudo</button>
+                    </div>`;
+                return;
+            }
+
+            container.classList.add('columns-1', 'md:columns-2', 'lg:columns-3');
+            container.classList.remove('flex', 'flex-col', 'items-center');
+
+            container.innerHTML = filteredPosts.map((post, index) => createPostHTML(post, index, false)).join('');
+        }
+
+        function renderSinglePost() {
+            const container = document.getElementById('single-post-container');
+            const post = POSTS.find(p => p.id === State.selectedPostId);
+            
+            if (!post) return;
+
+            let html = createPostHTML(post, 0, false);
+
+            if (post.thread && post.thread.length > 0) {
+                html += `<div class="flex flex-col w-full relative">`;
+                
+                post.thread.forEach((reply, idx) => {
+                    const isLast = idx === post.thread.length - 1;
+                    html += `
+                        <div class="flex w-full relative group">
+                            <div class="w-10 sm:w-16 shrink-0 flex flex-col items-center relative">
+                                <div class="w-[2px] bg-white/10 ${idx === 0 ? '-mt-6 h-[3.5rem]' : 'h-[2.5rem]'}"></div>
+                                <div class="w-2.5 h-2.5 rounded-full bg-brand-dark border-2 border-brand-red z-10 relative">
+                                    <div class="absolute top-1/2 left-[100%] w-[1.125rem] sm:w-[2.625rem] h-[2px] bg-white/10 -translate-y-1/2"></div>
+                                </div>
+                                ${!isLast ? `<div class="w-[2px] bg-white/10 flex-grow"></div>` : ''}
+                            </div>
+                            
+                            <div class="flex-grow pt-4 pb-2 pr-0 sm:pr-8">
+                                ${createPostHTML(reply, idx + 1, true)}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += `</div>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        // --- NAVEGAÇÃO E INTERATIVIDADE (URL Routing Additions) ---
+
+        function openPost(id, skipHistory = false) {
+            // Fecha a barra de pesquisa graciosamente
+            if (State.isSearchOpen) {
+                toggleSearch(); 
+            }
+            
+            State.feedScrollPosition = window.scrollY; 
+            State.view = 'post';
+            State.selectedPostId = parseInt(id);
+            
+            // Adiciona ao histórico de navegação com Try-Catch para evitar bloqueios de iframe/blob
+            if (!skipHistory) {
+                try {
+                    history.pushState({ view: 'post', id: State.selectedPostId }, '', '?post=' + State.selectedPostId);
+                } catch (e) {
+                    console.log('History API bloqueada pelo ambiente (blob/iframe). Navegação interna mantida.');
+                }
+            }
+
+            window.scrollTo({ top: 0, behavior: 'instant' });
+            renderApp();
+        }
+
+        function closePost(skipHistory = false) {
+            State.view = 'feed';
+            State.selectedPostId = null;
+            
+            // Limpa o URL e o histórico com Try-Catch para evitar bloqueios de iframe/blob
+            if (!skipHistory) {
+                try {
+                    const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+                    history.pushState({ view: 'feed' }, '', cleanUrl);
+                } catch (e) {
+                    console.log('History API bloqueada pelo ambiente (blob/iframe). Navegação interna mantida.');
+                }
+            }
+
+            renderApp();
+            
+            setTimeout(() => {
+                window.scrollTo({ top: State.feedScrollPosition, behavior: 'instant' });
+            }, 10);
+        }
+
+        // Evento que deteta os botões Back/Forward do Browser
+        window.addEventListener('popstate', (e) => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const postId = urlParams.get('post');
+            
+            if (postId) {
+                State.view = 'post';
+                State.selectedPostId = parseInt(postId);
+                window.scrollTo({ top: 0, behavior: 'instant' });
+                renderApp();
+            } else {
+                State.view = 'feed';
+                State.selectedPostId = null;
+                renderApp();
+                setTimeout(() => {
+                    window.scrollTo({ top: State.feedScrollPosition, behavior: 'instant' });
+                }, 10);
+            }
+        });
+
+        function scrollCategories(amount) {
+            const container = document.getElementById('categories-scroll-wrapper');
+            container.scrollBy({ left: amount, behavior: 'smooth' });
+        }
+
+        function highlightSearch(text, query) {
+            if (!query) return text;
+            const regex = new RegExp(`(${query})`, 'gi');
+            return text.replace(regex, '<span class="bg-brand-red/20 text-brand-red px-1 rounded">$1</span>');
+        }
+
+        function setActiveCategory(cat) {
+            State.activeCategory = cat;
+            renderCategories(); // Atualiza a cor de ativo nos botões
+            if (State.view !== 'feed') closePost();
+            else renderApp();
+        }
+
+        function setActiveLevel(nivel) {
+            State.activeLevel = nivel;
+            renderLevels(); // Atualiza a cor de ativo nos botões
+            if (State.view !== 'feed') closePost();
+            else renderApp();
+        }
+
+        function clearFilters() {
+            State.activeCategory = 'Recentes';
+            State.activeLevel = 'Todos';
+            State.searchQuery = '';
+            document.getElementById('search-input').value = '';
+            
+            State.location.state = 'Nacional';
+            State.location.city = 'Todas';
+            document.getElementById('location-btn-text').innerText = 'Nacional';
+            if(document.getElementById('mobile-location-btn-text')) {
+                document.getElementById('mobile-location-btn-text').innerText = 'Nacional';
+            }
+            
+            renderCategories();
+            renderLevels();
+            renderApp();
+        }
+
+        function toggleFilters() {
+            State.isFiltersOpen = !State.isFiltersOpen;
+            const desktopFilters = document.getElementById('filters-container');
+            const mobileOverlay = document.getElementById('mobile-filters-overlay');
+            const mobileSheet = document.getElementById('mobile-filters-sheet');
+            const icon = document.getElementById('filter-toggle-icon');
+
+            if (State.isFiltersOpen) {
+                icon.classList.add('text-brand-red');
+                
+                // Desktop Toggle
+                desktopFilters.classList.remove('hidden');
+                desktopFilters.classList.add('flex');
+                setTimeout(() => {
+                    desktopFilters.classList.remove('opacity-0', '-translate-y-4');
+                    desktopFilters.classList.add('opacity-100', 'translate-y-0');
+                }, 10);
+
+                // Mobile Toggle
+                mobileOverlay.classList.remove('hidden');
+                mobileSheet.classList.remove('hidden');
+                mobileSheet.classList.add('flex');
+                
+                if (window.innerWidth < 640) document.body.style.overflow = 'hidden';
+
+                setTimeout(() => {
+                    mobileOverlay.classList.remove('opacity-0');
+                    mobileOverlay.classList.add('opacity-100');
+                    mobileSheet.classList.remove('translate-y-full');
+                    mobileSheet.classList.add('translate-y-0');
+                }, 10);
+
+            } else {
+                icon.classList.remove('text-brand-red');
+                
+                // Desktop Toggle
+                desktopFilters.classList.add('opacity-0', '-translate-y-4');
+                desktopFilters.classList.remove('opacity-100', 'translate-y-0');
+                
+                // Mobile Toggle
+                mobileOverlay.classList.add('opacity-0');
+                mobileOverlay.classList.remove('opacity-100');
+                mobileSheet.classList.add('translate-y-full');
+                mobileSheet.classList.remove('translate-y-0');
+
+                document.body.style.overflow = '';
+
+                setTimeout(() => {
+                    desktopFilters.classList.add('hidden');
+                    desktopFilters.classList.remove('flex');
+                    mobileOverlay.classList.add('hidden');
+                    mobileSheet.classList.add('hidden');
+                    mobileSheet.classList.remove('flex');
+                }, 300);
+            }
+        }
+
+        function toggleSearch() {
+            State.isSearchOpen = !State.isSearchOpen;
+            const searchBar = document.getElementById('search-bar');
+            const searchInput = document.getElementById('search-input');
+            const headerFeed = document.getElementById('header-feed'); // Acesso à header padrão
+
+            if (State.isSearchOpen) {
+                // Expande a barra de pesquisa
+                searchBar.classList.remove('opacity-0', 'pointer-events-none', 'scale-95');
+                searchBar.classList.add('opacity-100', 'scale-100', 'z-30');
+                
+                // Esconde todo o conteúdo da Header (Perfil e Botões) suavemente
+                headerFeed.classList.add('opacity-0', 'pointer-events-none');
+                headerFeed.classList.remove('opacity-100');
+                
+                setTimeout(() => searchInput.focus(), 100);
+            } else {
+                // Recolhe a barra de pesquisa
+                searchBar.classList.add('opacity-0', 'pointer-events-none', 'scale-95');
+                searchBar.classList.remove('opacity-100', 'scale-100', 'z-30');
+                
+                // Traz o conteúdo da Header de volta à vida
+                headerFeed.classList.remove('opacity-0', 'pointer-events-none');
+                headerFeed.classList.add('opacity-100');
+                
+                if (State.searchQuery !== '') {
+                    State.searchQuery = '';
+                    searchInput.value = '';
+                    renderApp();
+                }
+            }
+        }
+
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            State.searchQuery = e.target.value;
+            if (State.view === 'post') closePost(); 
+            else renderApp();
+        });
+
+        // Toggle Audio
+        function toggleAudio(id) {
+            const stringId = String(id); 
+
+            const resetAudioUI = (audioId) => {
+                const icon = document.getElementById(`audio-icon-${audioId}`);
+                const wrapper = document.getElementById(`audio-progress-wrapper-${audioId}`);
+                const progress = document.getElementById(`audio-progress-${audioId}`);
+                
+                if (icon) {
+                    icon.innerHTML = `<i data-lucide="play" class="w-3.5 h-3.5 text-white/50 group-hover:text-brand-red fill-transparent group-hover:fill-brand-red/20 transition-all"></i>`;
+                }
+                if (wrapper) {
+                    wrapper.classList.add('hidden');
+                    wrapper.classList.remove('sm:block');
+                }
+                if (progress) progress.style.width = '0%';
+            };
+
+            const setPlayingUI = (audioId) => {
+                const icon = document.getElementById(`audio-icon-${audioId}`);
+                const wrapper = document.getElementById(`audio-progress-wrapper-${audioId}`);
+                
+                if (icon) {
+                    icon.innerHTML = `<div class="flex gap-[2px] h-3 items-end">
+                         <div class="w-1 bg-brand-red rounded-full animate-pulse-fast h-full"></div>
+                         <div class="w-1 bg-brand-red rounded-full animate-pulse-fast h-2/3" style="animation-delay: 0.1s"></div>
+                         <div class="w-1 bg-brand-red rounded-full animate-pulse-fast h-full" style="animation-delay: 0.2s"></div>
+                       </div>`;
+                }
+                if (wrapper) {
+                    wrapper.classList.remove('hidden');
+                    wrapper.classList.add('sm:block');
+                }
+            };
+
+            if (State.audio.interval) {
+                clearInterval(State.audio.interval);
+                State.audio.interval = null;
+            }
+
+            if (State.audio.playingId === stringId) {
+                resetAudioUI(State.audio.playingId);
+                State.audio.playingId = null;
+                State.audio.progress = 0;
+                lucide.createIcons();
+            } else {
+                if (State.audio.playingId !== null) {
+                    resetAudioUI(State.audio.playingId);
+                }
+
+                State.audio.playingId = stringId;
+                State.audio.progress = 0;
+                
+                setPlayingUI(stringId);
+
+                State.audio.interval = setInterval(() => {
+                    State.audio.progress += 0.5;
+                    const progressBar = document.getElementById(`audio-progress-${stringId}`);
+                    
+                    if (progressBar) {
+                        progressBar.style.width = `${State.audio.progress}%`;
+                    }
+
+                    if (State.audio.progress >= 100) {
+                        clearInterval(State.audio.interval);
+                        State.audio.interval = null;
+                        resetAudioUI(stringId);
+                        State.audio.playingId = null;
+                        State.audio.progress = 0;
+                        lucide.createIcons();
+                    }
+                }, 100);
+            }
+        }
+
+        function copyCitation(id, text) {
+            const textarea = document.createElement("textarea");
+            textarea.value = text;
+            textarea.style.position = "fixed";
+            textarea.style.opacity = "0";
+            document.body.appendChild(textarea);
+            textarea.select();
+            
+            try {
+                document.execCommand('copy');
+                const citeText = document.getElementById(`cite-text-${id}`);
+                const icon = citeText.previousElementSibling;
+                
+                if (citeText) {
+                    citeText.innerText = "Copiado!";
+                    citeText.classList.add("text-brand-red");
+                    icon.setAttribute('data-lucide', 'check');
+                    icon.classList.add("text-brand-red");
+                    lucide.createIcons();
+                    
+                    setTimeout(() => {
+                        citeText.innerText = "Citar";
+                        citeText.classList.remove("text-brand-red");
+                        icon.setAttribute('data-lucide', 'copy');
+                        icon.classList.remove("text-brand-red");
+                        lucide.createIcons();
+                    }, 2000);
+                }
+            } catch (err) {
+                console.error("Falha ao copiar:", err);
+            } finally {
+                document.body.removeChild(textarea);
+            }
+        }
+
+        // --- COMPORTAMENTO DE SCROLL (AUTO-HIDE FILTERS DESKTOP) ---
+        let scrollTimeout;
+        const desktopFiltersContainer = document.getElementById('filters-container');
+
+        window.addEventListener('scroll', () => {
+            if (State.view === 'post' || !State.isFiltersOpen || window.innerWidth < 640) return;
+
+            const currentScrollY = window.scrollY;
+            
+            if (currentScrollY > 100) {
+                desktopFiltersContainer.classList.add('opacity-0', '-translate-y-4');
+                desktopFiltersContainer.classList.remove('opacity-100', 'translate-y-0');
+                
+                clearTimeout(scrollTimeout);
+                
+                scrollTimeout = setTimeout(() => {
+                    if(State.isFiltersOpen) {
+                        desktopFiltersContainer.classList.remove('opacity-0', '-translate-y-4');
+                        desktopFiltersContainer.classList.add('opacity-100', 'translate-y-0');
+                    }
+                }, 300);
+            } else {
+                desktopFiltersContainer.classList.remove('opacity-0', '-translate-y-4');
+                desktopFiltersContainer.classList.add('opacity-100', 'translate-y-0');
+                clearTimeout(scrollTimeout);
+            }
+        }, { passive: true });
+
+        // --- INICIALIZAÇÃO ---
+        window.onload = () => {
+            renderCategories();
+            renderLevels();
+            
+            // Verifica no URL se o utilizador abriu um Post especificamente
+            const urlParams = new URLSearchParams(window.location.search);
+            const postId = urlParams.get('post');
+            
+            if (postId) {
+                State.view = 'post';
+                State.selectedPostId = parseInt(postId);
+            }
+            
+            renderApp();
+        };
+
+    </script>
+</body>
+</html>

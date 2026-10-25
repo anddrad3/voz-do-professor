@@ -1,0 +1,230 @@
+VOZ DO PROFESSOR  |  Catálogo de funcionalidades
+1
+VOZ DO PROFESSOR
+Catálogo de funcionalidades e estrutura recomendada da plataforma
+Documento de especificação funcional organizado a partir do projeto de pesquisa Voz do Professor:
+informação, autonomia e valorização docente diante da padronização do trabalho pedagógico e do
+detalhamento das funcionalidades discutidas.
+A plataforma terá foco em informação confiável, oportunidades de trabalho, escuta docente e
+valorização profissional. A proposta não substitui a autoria pedagógica dos professores por materiais
+de aula prontos.
+Estrutura recomendada para o menu principal
+Representação visual conceitual do menu de navegação, organizada em oito áreas de acesso. Esta ilustração é uma
+recriação gráfica da estrutura recomendada, não uma captura de uma plataforma já implementada.
+Voz do Professor
+Início
+Visão geral
+Direitos e Notícias
+Legislação e informações
+Radar de Escolas
+Mapa e instituições
+Oportunidades
+Concursos e seleções
+Voz do Professor
+Escuta e pesquisas
+Meus Alertas
+Avisos personalizados
+Meu Perfil
+Preferências e favoritos
+Transparência
+Fontes e privacidade
+Organização do catálogo
+O conjunto abaixo reúne 66 funcionalidades distribuídas em seis módulos. Os quatro primeiros
+correspondem aos eixos centrais do projeto de pesquisa; conta/personalização e administração/gestão
+detalham recursos de suporte para uma implementação completa.
+1. Central de Informações e Direitos dos Professores
+Objetivo: Democratizar o acesso às informações legais, profissionais e educacionais.
+
+VOZ DO PROFESSOR  |  Catálogo de funcionalidades
+2
+1.1. Portal de notícias educacionais. Reunir notícias relevantes sobre a educação brasileira, priorizando
+ acontecimentos que afetem diretamente os professores.
+1.2. Biblioteca de legislação educacional. Organizar leis, decretos, resoluções e normas que
+ regulamentam a formação, a profissão e o trabalho docente.
+1.3. Consulta ao piso salarial do magistério. Apresentar informações atualizadas sobre o piso salarial
+ nacional e as normas relacionadas à remuneração dos professores.
+1.4. Consulta aos planos de carreira municipais. Permitir que professores encontrem legislação sobre
+ progressão funcional, evolução salarial e organização da carreira no município.
+1.5. Atualizações sobre decisões dos conselhos de educação. Divulgar decisões dos conselhos nacional,
+ estaduais e municipais que tenham impacto na profissão.
+1.6. Explicador de legislação em linguagem simples. Apresentar resumos do significado prático das
+ normas para o cotidiano do professor, sem substituir o texto oficial.
+1.7. Pesquisa por legislação e assunto. Permitir buscas por palavras-chave como contratação
+ temporária, atribuição de aulas, aposentadoria, jornada e formação docente.
+1.8. Histórico de mudanças legislativas. Mostrar alterações relevantes de determinada norma e
+ respectivas datas, com links para fontes oficiais.
+1.9. Sistema de fontes verificadas. Identificar a fonte original de cada notícia ou legislação, registrar o
+ responsável humano pela curadoria e permitir sua conferência.
+2. Radar Regional de Oportunidades Docentes
+Objetivo: Identificar instituições de ensino e possibilidades profissionais próximas ao usuário, com
+apoio de bases públicas.
+2.1. Mapa interativo de instituições de ensino. Apresentar escolas e estabelecimentos de ensino em
+ atividade no município ou região escolhida pelo professor.
+2.2. Localizador de escolas próximas. Permitir que o usuário informe sua cidade e encontre instituições
+ existentes em seu entorno.
+2.3. Filtro por município e região. Organizar resultados por localização territorial, facilitando a pesquisa
+ por oportunidades.
+2.4. Cadastro automatizado de instituições. Construir e atualizar uma base de estabelecimentos
+ educacionais utilizando dados públicos da Receita Federal.
+2.5. Classificação por atividade educacional. Identificar estabelecimentos pelos códigos CNAE
+ selecionados para a educação básica.
+2.6. Cruzamento com o Censo Escolar. Comparar os estabelecimentos identificados no CNPJ com dados
+ do Inep para melhorar precisão e cobertura.
+2.7. Perfil informativo das instituições. Exibir nome, endereço, município, categoria administrativa e
+ contatos públicos disponíveis.
+2.8. Filtro por rede de ensino. Permitir visualização separada de instituições públicas municipais,
+ estaduais, federais e privadas.
+2.9. Pesquisa por distância. Localizar instituições dentro de um raio escolhido pelo professor, por
+ exemplo, 5, 10, 25 ou 50 km.
+
+VOZ DO PROFESSOR  |  Catálogo de funcionalidades
+3
+2.10. Indicadores territoriais de instituições. Apresentar a distribuição dos estabelecimentos por
+ município ou região e dimensionar a estrutura territorial do ensino.
+2.11. Lista de escolas favoritas. Permitir que o professor salve instituições para acompanhar possíveis
+ oportunidades profissionais.
+2.12. Acesso aos canais de candidatura. Quando houver dados públicos verificados, indicar o site ou
+ canal oficial de recrutamento da instituição.
+Nota: a presença de uma instituição no mapa não indica necessariamente a existência de uma vaga aberta.
+3. Central de Concursos Públicos e Processos Seletivos
+Objetivo: Reunir oportunidades de ingresso, contratação e mobilidade profissional para professores.
+3.1. Buscador de concursos públicos. Reunir editais municipais, estaduais e federais com cargos
+ relacionados ao magistério.
+3.2. Buscador de processos seletivos simplificados. Monitorar contratações temporárias e seleções
+ para docentes.
+3.3. Monitor de seleções de instituições privadas. Divulgar processos seletivos de escolas privadas
+ identificados por fontes verificáveis.
+3.4. Central de cadastros de reserva. Informar processos que formam cadastro de candidatos para
+ futuras convocações.
+3.5. Filtro por disciplina. Permitir buscas por componentes curriculares como Matemática, História,
+ Português, Geografia e Ciências.
+3.6. Filtro por nível de ensino. Organizar oportunidades por educação infantil, ensino fundamental,
+ ensino médio e outros níveis pertinentes.
+3.7. Filtro por escolaridade exigida. Identificar editais compatíveis com a formação exigida para cada
+ cargo.
+3.8. Consulta à remuneração. Mostrar salários e informações remuneratórias constantes nos editais,
+ quando disponíveis.
+3.9. Calendário de inscrições e prazos. Apresentar datas de abertura, encerramento e demais prazos
+ dos processos seletivos.
+3.10. Alertas personalizados de oportunidades. Notificar professores quando surgirem seleções
+ compatíveis com perfil profissional e raio de distância.
+3.11. Página detalhada de cada edital. Organizar cargo, município, remuneração, requisitos, inscrições
+ e documentação.
+3.12. Link direto para o edital oficial. Encaminhar ao documento original e, quando disponível, à página
+ oficial de inscrição.
+3.13. Lista de oportunidades salvas. Permitir guardar concursos e seleções de interesse.
+ 
+3.14. Acompanhamento de situação dos editais. Identificar oportunidades futuras, com inscrições
+ abertas, encerradas ou em andamento, conforme fontes atualizadas.
+
+VOZ DO PROFESSOR  |  Catálogo de funcionalidades
+4
+4. Canal de Escuta e Valorização Docente
+Objetivo: Permitir que os professores expressem experiências e produzam dados sobre as condições
+reais de trabalho.
+4.1. Canal de manifestação dos professores. Criar espaço para relatos de dificuldades, necessidades e
+ experiências relacionadas à profissão.
+4.2. Relatos anônimos sobre condições de trabalho. Possibilitar registro de informações sem
+ identificação pessoal, respeitando privacidade e LGPD.
+4.3. Enquetes periódicas. Realizar pesquisas rápidas sobre problemas, demandas e questões do
+ magistério.
+4.4. Pesquisa sobre jornada de trabalho. Levantar informações de carga horária, acúmulo de atividades
+ e exercício profissional.
+4.5. Pesquisa sobre vínculos empregatícios. Reunir dados sobre efetivos, temporários e outras formas
+ de contratação.
+4.6. Pesquisa sobre remuneração docente. Investigar percepções e condições relacionadas a salários e
+ valorização profissional.
+4.7. Pesquisa sobre infraestrutura escolar. Levantar dificuldades ligadas às condições materiais das
+ instituições.
+4.8. Pesquisa sobre materiais didáticos. Investigar como professores selecionam, utilizam e adaptam
+ conteúdos didáticos.
+4.9. Pesquisa sobre uso de inteligência artificial. Investigar incorporação da IA, benefícios percebidos,
+ limitações e efeitos possíveis sobre autonomia.
+4.10. Painel coletivo de resultados. Devolver aos professores resultados agregados das manifestações
+ e pesquisas.
+4.11. Relatórios públicos de condições de trabalho. Produzir dados úteis a pesquisadores, sindicatos,
+ secretarias de educação e instituições públicas.
+4.12. Visualização de resultados por território. Apresentar indicadores por município ou região somente
+ com volume de respostas suficiente para preservar anonimato.
+4.13. Sugestões de melhorias para a plataforma. Permitir que usuários indiquem necessidades e novas
+ funcionalidades.
+4.14. Proteção e anonimização dos dados. Aplicar proteção desde a coleta, declarar finalidade e evitar
+ identificação de participantes.
+5. Ferramentas de Conta e Personalização
+Objetivo: Personalizar a experiência e integrar os diferentes serviços da plataforma.
+5.1. Cadastro gratuito do professor. Criar conta opcional para utilizar serviços personalizados,
+ mantendo acesso aberto às informações públicas.
+5.2. Perfil profissional. Registrar município, disciplina, formação e níveis de ensino de interesse.
+ 
+5.3. Configuração da região de interesse. Definir cidades e distâncias relevantes para pesquisas de
+ escolas e oportunidades.
+
+VOZ DO PROFESSOR  |  Catálogo de funcionalidades
+5
+5.4. Central de notificações. Concentrar avisos sobre concursos, seleções e atualizações normativas.
+ 
+5.5. Preferências de alertas. Permitir que o usuário escolha quais informações deseja receber.
+ 
+5.6. Central de favoritos. Reunir instituições, editais e publicações salvas.
+ 
+5.7. Controle de privacidade. Disponibilizar gestão de dados pessoais, consentimentos e solicitações
+ relacionadas à LGPD.
+6. Ferramentas Administrativas e de Gestão
+Objetivo: Oferecer mecanismos para atualização, transparência, qualidade e continuidade da
+plataforma.
+6.1. Painel administrativo. Permitir que responsáveis autorizados gerenciem conteúdos e acompanhem
+ o funcionamento do sistema.
+6.2. Gerenciador de notícias e legislação. Cadastrar, revisar, atualizar e publicar materiais
+ informativos.
+6.3. Sistema de validação humana. Exigir revisão de uma pessoa responsável identificada antes da
+ publicação de informações normativas.
+6.4. Gerenciador de concursos e seleções. Revisar editais, atualizar prazos, verificar fontes e corrigir
+ informações.
+6.5. Sistema de atualização de bases públicas. Executar rotinas de importação e tratamento dos dados
+ de CNPJ, CNAE e Censo Escolar.
+6.6. Verificador de qualidade dos dados. Identificar registros duplicados, dados defasados e
+ divergências entre bases.
+6.7. Gerenciador de enquetes e pesquisas. Elaborar instrumentos de coleta, controlar publicação e
+ acompanhar resultados.
+6.8. Painel estatístico administrativo. Acompanhar indicadores de utilização e resultados agregados
+ das pesquisas.
+6.9. Exportador de relatórios. Gerar documentos e conjuntos de dados agregados com proteção de
+ privacidade.
+6.10. Histórico de revisões e fontes. Registrar alterações de conteúdos, responsáveis por validações e
+ referências utilizadas.
+
+VOZ DO PROFESSOR  |  Catálogo de funcionalidades
+6
+Resumo das funcionalidades
+Módulo
+Quantidade
+1. Central de Informações e Direitos dos Professores
+9
+2. Radar Regional de Oportunidades Docentes
+12
+3. Central de Concursos Públicos e Processos Seletivos
+14
+4. Canal de Escuta e Valorização Docente
+14
+5. Ferramentas de Conta e Personalização
+7
+6. Ferramentas Administrativas e de Gestão
+10
+Total
+66
+Princípios de funcionamento
+Autonomia docente: a plataforma informa, organiza e conecta, mas não produz planos de aula,
+sequências didáticas ou atividades pedagógicas prontas em substituição ao trabalho intelectual do
+professor.
+Confiabilidade: o conteúdo normativo deve trazer fonte verificável e curadoria humana identificada.
+Os dados territoriais devem indicar limites, possíveis erros e defasagem cadastral.
+Privacidade: escuta e pesquisas devem observar a LGPD, com finalidade declarada, anonimização e
+divulgação apenas de resultados compatíveis com a proteção dos participantes.
+Implantação gradual: priorizar os quatro eixos originais em um protótipo funcional e ampliar recursos
+de personalização e gestão conforme os testes com docentes.
+Referência documental
+ANDRADE, Matheus da Silva. Voz do Professor: informação, autonomia e valorização docente diante da
+padronização do trabalho pedagógico. Projeto de pesquisa, Unesp/Franca, 2026. Em especial, seção
+5.3 (páginas 7–8 do corpo do projeto) e objetivos específicos.
+Este catálogo descreve uma proposta de produto. Não afirma que as funcionalidades já estejam desenvolvidas ou
+disponíveis ao público.

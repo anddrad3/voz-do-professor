@@ -1,0 +1,32 @@
+{
+  "name": "voz-do-professor",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "vite build",
+    "start": "node server/index.js",
+    "test": "node --test --test-concurrency=1 tests/*.test.js",
+    "check": "node scripts/check.mjs",
+    "admin": "node scripts/admin.mjs",
+    "import": "node scripts/import.mjs",
+    "backup": "node scripts/backup.mjs",
+    "format": "prettier --write src server scripts tests docs/*.md *.md *.json *.js *.html .github/workflows/*.yml"
+  },
+  "dependencies": {
+    "csv-parse": "^7.0.3",
+    "express": "^5.1.0",
+    "helmet": "^8.1.0",
+    "leaflet": "^1.9.4",
+    "lucide": "^0.468.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2",
+    "vite": "^6.4.1"
+  }
+}

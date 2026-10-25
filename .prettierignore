@@ -1,0 +1,7 @@
+docs/prototipo-original.html
+docs/especificacao.txt
+package-lock.json
+dist
+node_modules
+data
+tmp
