@@ -15,6 +15,7 @@ import {
 } from '../ui.js';
 import { FEATURES } from '../../shared/features.js';
 let session = null,
+  secondFactorRequired = false,
   csrf = null,
   tab = 'story',
   items = [],
@@ -30,7 +31,7 @@ async function request(path, body, method = 'POST') {
   try {
     value = await r.json();
   } catch {
-    throw new Error('Painel indisponível. Confira a conexão privada.');
+    throw new Error('Painel indisponível. Confira sua conexão e tente novamente.');
   }
   if (!r.ok) throw new Error(value.error || 'Operação recusada.');
   return value;
@@ -68,7 +69,7 @@ function editor(kind, r = {}) {
 async function render() {
   const main = document.querySelector('#main');
   if (!session) {
-    main.innerHTML = `<article class="card reading"><h2>Acesso do proprietário</h2><p>Use a senha criada pelo comando npm run admin. Não existe cadastro de visitantes.</p><form data-form="login" class="stack">${field('password', 'Senha do painel', '', 'password', 'required autocomplete="current-password"')}<button class="button primary">Entrar no painel</button></form></article>`;
+    main.innerHTML = `<article class="card reading"><h2>Acesso do proprietário</h2><p>${secondFactorRequired ? 'Entre com sua senha e o código de seis dígitos do aplicativo autenticador.' : 'Entre com sua senha de proprietário.'}</p><form data-form="login" class="stack">${field('password', 'Senha do painel', '', 'password', 'required autocomplete="current-password"')}${secondFactorRequired ? field('code', 'Código do autenticador ou de recuperação', '', 'text', 'required autocomplete="one-time-code" autocapitalize="off" spellcheck="false" maxlength="64"') + '<p class="muted">Sem acesso ao autenticador? Use um dos códigos de recuperação que você guardou. Cada código de recuperação funciona uma única vez.</p>' : ''}<button class="button primary">Entrar no painel</button></form></article>`;
     return;
   }
   let body = '';
@@ -163,7 +164,10 @@ document.addEventListener('submit', async (e) => {
   const v = Object.fromEntries(new FormData(form));
   try {
     if (form.dataset.form === 'login') {
-      const data = await request('/auth/login', { password: v.password });
+      const data = await request('/auth/login', {
+        password: v.password,
+        ...(secondFactorRequired ? { code: v.code } : {}),
+      });
       session = data.user;
       csrf = data.csrf;
     } else if (form.dataset.form === 'publish') {
@@ -202,8 +206,9 @@ request('/auth/session')
   .then((data) => {
     session = data.user;
     csrf = data.csrf;
+    secondFactorRequired = data.secondFactorRequired;
     return render();
   })
   .catch((e) => {
-    document.querySelector('#main').innerHTML = empty('Conexão privada indisponível', e.message);
+    document.querySelector('#main').innerHTML = empty('Painel indisponível', e.message);
   });

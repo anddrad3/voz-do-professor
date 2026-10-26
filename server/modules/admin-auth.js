@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { token, hash, passwordMatches, limiter } from '../security.js';
+import { token, hash, passwordMatches } from '../security.js';
+import { consumeSecondFactor, loginBudget } from './totp.js';
 export function adminAuth(db) {
   const r = Router();
   const cookiePath = `${(process.env.BASE_PATH || '').replace(/\/$/, '')}/api/admin`;
@@ -8,16 +9,35 @@ export function adminAuth(db) {
     res.json({
       user: req.user ? { id: req.user.id, name: req.user.name, role: 'admin' } : null,
       csrf: req.session?.csrf || null,
+      secondFactorRequired:
+        process.env.ADMIN_WEB_ENABLED === 'true' ||
+        !!db.prepare('SELECT 1 FROM admin_factors LIMIT 1').get(),
     }),
   );
-  r.post('/login', limiter(6, 15 * 60000), async (req, res) => {
-    const { password } = z
-      .object({ password: z.string().min(1).max(256) })
+  r.post('/login', async (req, res) => {
+    const budget = loginBudget(db);
+    if (!budget.allowed)
+      return res
+        .set('Retry-After', String(budget.retryAfter))
+        .status(429)
+        .json({ error: 'Muitas tentativas. Aguarde 15 minutos antes de tentar novamente.' });
+    const { password, code } = z
+      .object({ password: z.string().min(1).max(256), code: z.string().max(64).optional() })
       .strict()
       .parse(req.body);
     const user = db.prepare('SELECT * FROM admin_users LIMIT 1').get();
     if (!user || !(await passwordMatches(password, user.password)))
       return res.status(401).json({ error: 'Credencial inválida.' });
+    const needsFactor =
+      process.env.ADMIN_WEB_ENABLED === 'true' ||
+      !!db.prepare('SELECT 1 FROM admin_factors WHERE user_id=?').get(user.id);
+    if (needsFactor && !consumeSecondFactor(db, user.id, code))
+      return res.status(401).json({
+        error:
+          'Senha ou código inválido. Use um código novo do autenticador ou um código de recuperação.',
+      });
+    db.prepare('DELETE FROM admin_login_budget').run();
+    if (req.session) db.prepare('DELETE FROM admin_sessions WHERE token=?').run(req.session.token);
     const raw = token(),
       csrf = token();
     db.prepare('DELETE FROM admin_sessions WHERE expires<?').run(Date.now());

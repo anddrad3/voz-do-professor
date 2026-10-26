@@ -20,13 +20,13 @@ O endereço `relatos@exemplo.invalid` é propositalmente fictício e não recebe
 
 ## Painel exclusivo do proprietário
 
-**Publicação Alwaysdata:** acesso privado por cliente SSH local e socket protegido no servidor. Abra o atalho local `tmp/Abrir-painel.cmd`; a senha está em `tmp/ACESSO-PAINEL.txt`, fora do Git. O painel não está exposto à internet. Veja [operação](docs/operacao.md).
+**Acesso pelo celular ou computador:** https://amerindia.alwaysdata.net/voz-do-professor/painel. Não há botão administrativo no site público nem cadastro de visitantes. Não é necessário manter o computador ligado ou executar um túnel SSH.
 
-Não existe botão nem link administrativo no site. O serviço privado escuta somente em `127.0.0.1:3002`, separado da porta pública. Rode `npm run admin` uma única vez para criar o proprietário (sem e-mail, senha aleatória, hash scrypt). No desenvolvimento, defina antes `$env:DATABASE_PATH='data/demo-v2.sqlite'` no PowerShell. Em produção, use o banco configurado em `.env`.
+O login do proprietário exige senha e um código do autenticador (TOTP, seis dígitos, 30 segundos). Há dez códigos de recuperação de uso único, que substituem o código do autenticador; a senha continua obrigatória. A configuração inicial e os códigos ficam em arquivos privados, fora do Git e do diretório público. Consulte [operação](docs/operacao.md).
 
-Abra http://127.0.0.1:3002 no computador do servidor ou use túnel SSH. O painel permite adicionar/revisar/publicar/retirar relatos, corrigir registros públicos, consultar sincronizações e ligar/desligar cada ferramenta. Há botões de habilitar/desabilitar todas. Desabilitar todas esvazia o conteúdo; o cabeçalho permanece. O bloqueio do catálogo também ocorre no servidor.
+O painel permite adicionar/revisar/publicar/retirar relatos, corrigir registros, acompanhar sincronizações e habilitar/desabilitar ferramentas, individualmente ou todas. A autenticação usa hash scrypt, cookies Secure/HttpOnly/SameSite Strict, CSRF, verificação de origem e limite persistente de tentativas. O segundo fator impede reutilização de códigos aceitos. Relatos recebidos por e-mail e contatos não devem ser copiados para o cadastro: publique somente o texto autorizado.
 
-Não publique a porta administrativa no proxy. Apenas conhecer um endereço não concede acesso: há senha, cookie HttpOnly, CSRF, validação de origem e limite de tentativas. Só há uma conta de proprietário. O e-mail e PDFs recebidos ficam fora desta aplicação; cadastre apenas o texto autorizado para publicação.
+O modo local continua disponível para desenvolvimento quando `ADMIN_WEB_ENABLED=false`. A implantação online usa `ADMIN_WEB_ENABLED=true`, `ADMIN_HTTPS=true` e origem HTTPS explícita; ela recusa iniciar sem segundo fator provisionado. Não exponha a porta local de administração no proxy.
 
 ## Atualizações automáticas, sem IA
 
@@ -44,7 +44,7 @@ Não publique a porta administrativa no proxy. Apenas conhecer um endereço não
 
 Preparado para Node 24 + SQLite no Alwaysdata Free. O plano gratuito atualmente tem 1 GB de disco e 256 MB de RAM, é para uso não lucrativo e restringe endereços ao subdomínio alwaysdata.net da conta. Não configure upgrade, cartão ou serviços externos pagos. Esses limites exigem catálogo e sincronização limitados. O fornecedor pode alterar regras; não há garantia técnica de gratuidade eterna ou disponibilidade 100%.
 
-O código usa um único processo Node para público e painel local. `PORT`/`HOST` devem seguir o proxy; `ADMIN_PORT` fica em loopback. `BASE_PATH` e `VITE_BASE_PATH` permitem hospedar em subpasta sem substituir outro site. Detalhes em [Operação](docs/operacao.md).
+O código usa um único processo Node para público e painel administrativo. `PORT`/`HOST` devem seguir o proxy; `ADMIN_PORT` fica em loopback. `BASE_PATH` e `VITE_BASE_PATH` permitem hospedar em subpasta sem substituir outro site. Detalhes em [Operação](docs/operacao.md).
 
 ## Validação e módulos
 
@@ -52,7 +52,7 @@ O código usa um único processo Node para público e painel local. `PORT`/`HOST
 
 - `src/`: interface pública e painel com entradas separadas.
 - `shared/`: filtros e configuração de ferramentas.
-- `server/app.js`: serviço público somente leitura e serviço privado separado.
+- `server/app.js`: catálogo público somente leitura e rotas administrativas autenticadas.
 - `server/modules/automation.js`: integrações permitidas, limites e cache de catálogo.
 - `scripts/rfb-sync.py`: descoberta CNAE com orçamento estrito de recursos.
 - `public/formularios/`: PDF que não envia dados ao site.

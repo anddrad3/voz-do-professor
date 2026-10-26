@@ -11,6 +11,15 @@ const { createAutomation } = await import('./modules/automation.js');
 const { scheduleRfb } = await import('./modules/rfb.js');
 const { startAdminBridge, privateDirectory } = await import('./modules/admin-bridge.js');
 const db = openDatabase();
+// Provision on the HTTP host, which owns SQLite; SSH and HTTP can be separate hosts.
+if (
+  process.env.ADMIN_WEB_ENABLED === 'true' &&
+  process.env.ADMIN_2FA_SETUP_FILE &&
+  !db.prepare('SELECT 1 FROM admin_factors LIMIT 1').get()
+) {
+  const { provisionSecondFactor } = await import('./modules/totp.js');
+  provisionSecondFactor(db, process.env.ADMIN_2FA_SETUP_FILE);
+}
 if (
   process.env.NODE_ENV === 'production' &&
   db.prepare("SELECT 1 FROM metadata WHERE key='demo-seeded-v1'").get()
@@ -20,7 +29,7 @@ if (process.env.DEMO_MODE === 'true') seedDemo(db);
 const automation = createAutomation(db);
 const port = Number(process.env.PORT) || 3001,
   host = process.env.HOST || process.env.IP || '127.0.0.1';
-const server = createApp(db).listen(port, host, () =>
+const server = createApp(db, { automation }).listen(port, host, () =>
   console.log(`Voz do Professor: http://${host}:${port}`),
 );
 const bridgeDirectory =

@@ -12,6 +12,9 @@ export function openDatabase(path = process.env.DATABASE_PATH || 'data/public-v2
   CREATE TABLE IF NOT EXISTS metadata(key TEXT PRIMARY KEY,value TEXT NOT NULL);
   CREATE TABLE IF NOT EXISTS admin_users(id TEXT PRIMARY KEY,name TEXT NOT NULL,password TEXT NOT NULL);
   CREATE TABLE IF NOT EXISTS admin_sessions(token TEXT PRIMARY KEY,user_id TEXT REFERENCES admin_users(id) ON DELETE CASCADE,expires INTEGER NOT NULL,csrf TEXT NOT NULL);
+  CREATE TABLE IF NOT EXISTS admin_factors(user_id TEXT PRIMARY KEY REFERENCES admin_users(id) ON DELETE CASCADE,secret TEXT NOT NULL,last_step INTEGER NOT NULL DEFAULT -1);
+  CREATE TABLE IF NOT EXISTS admin_recovery(user_id TEXT REFERENCES admin_users(id) ON DELETE CASCADE,code_hash TEXT PRIMARY KEY);
+  CREATE TABLE IF NOT EXISTS admin_login_budget(id INTEGER PRIMARY KEY,attempts INTEGER NOT NULL,until INTEGER NOT NULL);
   `);
   const columns = db
     .prepare('PRAGMA table_info(records)')

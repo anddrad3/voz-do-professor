@@ -58,8 +58,27 @@ function errors(app) {
   });
   return app;
 }
-export function createApp(db, { staticDir = resolve('dist') } = {}) {
+export function createApp(db, { staticDir = resolve('dist'), automation } = {}) {
   const app = foundation();
+  if (process.env.ADMIN_WEB_ENABLED === 'true') {
+    if (
+      process.env.ADMIN_HTTPS !== 'true' ||
+      !/^https:\/\/[^/]+$/.test(process.env.ADMIN_ORIGIN || '') ||
+      !db.prepare('SELECT 1 FROM admin_factors LIMIT 1').get()
+    )
+      throw new Error('Painel web exige HTTPS, ADMIN_ORIGIN e segundo fator provisionado.');
+    const management = createAdminApp(db, { staticDir, automation });
+    app.use((req, res, next) => {
+      if (
+        req.path === '/painel' ||
+        req.path === '/painel/' ||
+        req.path === '/api/admin' ||
+        req.path.startsWith('/api/admin/')
+      )
+        return management(req, res, next);
+      next();
+    });
+  }
   // Public service is read-only: no cookies, identities, uploads, account routes or body parser.
   app.use((req, res, next) => {
     if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method))
@@ -139,11 +158,22 @@ export function createApp(db, { staticDir = resolve('dist') } = {}) {
 }
 export function createAdminApp(db, { staticDir = resolve('dist'), automation } = {}) {
   const app = foundation();
+  app.use((req, res, next) => {
+    res.set({
+      'Cache-Control': 'no-store',
+      'X-Robots-Tag': 'noindex, nofollow',
+      'Referrer-Policy': 'no-referrer',
+    });
+    next();
+  });
   app.use('/api/admin', limiter(120));
   app.use('/api/admin', (req, res, next) => {
     if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
       const origin = process.env.ADMIN_ORIGIN || 'http://127.0.0.1:3002';
-      if (req.headers.origin && req.headers.origin !== origin)
+      if (
+        (req.headers.origin && req.headers.origin !== origin) ||
+        req.headers['sec-fetch-site'] === 'cross-site'
+      )
         return res.status(403).json({ error: 'Origem não autorizada.' });
       if (!req.is('application/json')) return res.sendStatus(415);
     }
@@ -156,5 +186,6 @@ export function createAdminApp(db, { staticDir = resolve('dist'), automation } =
   app.use('/assets', express.static(resolve(staticDir, 'assets')));
   app.get('/logo.png', (req, res) => res.sendFile(resolve(staticDir, 'logo.png')));
   app.get('/', (req, res) => res.sendFile(resolve(staticDir, 'admin.html')));
+  app.get(['/painel', '/painel/'], (req, res) => res.sendFile(resolve(staticDir, 'admin.html')));
   return errors(app);
 }
