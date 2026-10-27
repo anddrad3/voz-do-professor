@@ -56,6 +56,21 @@ test('falha da interpretação não causa novas cobranças no mesmo dia', async 
   assert.equal(calls, 2);
   db.close();
 });
+test('interpretação que chama publicações de consultas nunca é publicada', async () => {
+  const db = openDatabase(':memory:');
+  for (let i = 0; i < 5; i++) recordQuery(db, q, at);
+  const gemini = {
+    generate: async () => ({
+      model: 'teste',
+      text: JSON.stringify({
+        summary: 'Foram registradas 92 consultas no período deste catálogo.',
+      }),
+    }),
+  };
+  await assert.rejects(updateStatisticsInsight(db, gemini, at), /confundiu/);
+  assert.equal(statistics(db, defaultPeriod(at)).insight, null);
+  db.close();
+});
 test('períodos validam meses, ordem e máximo de 24 meses', () => {
   for (const invalid of [
     { from: '2026-13', to: '2026-14' },

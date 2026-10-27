@@ -1,5 +1,5 @@
 // Friendly version labels assigned to the actual Git milestones; these are not Git tags.
-export const PLATFORM_VERSION = '3.0.0';
+export const PLATFORM_VERSION = '3.0.1';
 export const RELEASES = [
   {
     version: PLATFORM_VERSION,
@@ -8,6 +8,7 @@ export const RELEASES = [
     status: 'Publicada',
     commits: [],
     changes: [
+      'Estatísticas distinguem publicações do catálogo e consultas dos usuários, com validação da interpretação por IA.',
       'Histórico de versões no painel.',
       'Conta principal responsável pela IA, recarga automática desligada e teto mensal de R$ 25 no Google, além do orçamento acumulado de US$ 4,50 no site.',
       'Estatísticas públicas com gráficos por período e interpretação diária por IA de contagens reais.',
