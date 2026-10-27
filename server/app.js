@@ -103,6 +103,9 @@ export function createApp(db, { staticDir = resolve('dist'), automation, gemini 
     ] &&
     (!r.demo || process.env.DEMO_MODE === 'true') &&
     r.kind !== 'school' &&
+    !(
+      r.kind === 'opportunity' && !['Concurso público', 'Processo simplificado'].includes(r.type)
+    ) &&
     !(r.kind === 'content' && r.type === 'Piso salarial');
   app.get('/api/health', (req, res) => res.json({ ok: true }));
   app.get('/api/statistics', (req, res) => {

@@ -39,6 +39,23 @@ test('estatísticas de consultas são opt-in, agregadas e não guardam textos ou
   assert.equal(db.prepare('SELECT total FROM statistics_queries').get().total, 5);
   db.close();
 });
+test('falha da interpretação não causa novas cobranças no mesmo dia', async () => {
+  const db = openDatabase(':memory:');
+  for (let i = 0; i < 5; i++) recordQuery(db, q, at);
+  let calls = 0;
+  const gemini = {
+    generate: async () => {
+      calls++;
+      throw new Error('indisponível');
+    },
+  };
+  await assert.rejects(updateStatisticsInsight(db, gemini, at));
+  assert.equal((await updateStatisticsInsight(db, gemini, at + 60000)).skipped, true);
+  assert.equal(calls, 1);
+  await assert.rejects(updateStatisticsInsight(db, gemini, at + 86400000));
+  assert.equal(calls, 2);
+  db.close();
+});
 test('períodos validam meses, ordem e máximo de 24 meses', () => {
   for (const invalid of [
     { from: '2026-13', to: '2026-14' },

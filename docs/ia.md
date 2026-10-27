@@ -2,7 +2,7 @@
 
 ## Ativação
 
-O proprietário autorizou a implementação paga após receber uma estimativa. A geração comum com Gemini 3.5 Flash-Lite já foi validada no plano gratuito. A busca Google dos modelos atuais exige plano pago nesta conta. O código permite ativá-la somente com `AI_BILLING_MODE=paid`, `GEMINI_PAID_TIER_CONFIRMED=true` e `AI_INTERACTIVE_ENABLED=true`, após verificar Prepay e recarga automática desligada. Enquanto o faturamento não for concluído, a produção mantém os chats desativados e o catálogo gratuito.
+O proprietário autorizou a implementação paga após receber uma estimativa. A geração comum com Gemini 3.5 Flash-Lite já foi validada no plano gratuito. A busca Google dos modelos atuais exige plano pago nesta conta. O código permite ativá-la somente com `AI_BILLING_MODE=paid`, `GEMINI_PAID_TIER_CONFIRMED=true` e `AI_INTERACTIVE_ENABLED=true`, após verificar Prepay e recarga automática desligada. Ativação concluída em 27/10/2026 na conta principal. O usuário realizou pré-pagamento de R$ 150 (mínimo exibido na região); recarga automática conferida como desativada. Teto mensal do projeto no Google: R$ 25, sujeito a até dez minutos de atraso. Orçamento local acumulado permanece US$ 4,50. Consulta real com busca e fontes validada em produção.
 
 A assinatura Google One Standard de armazenamento não inclui créditos de API. O cartão salvo não é autorização para recargas ou outros serviços.
 
@@ -36,7 +36,7 @@ Gratuito: `AI_ENABLED=true`, `AI_BILLING_MODE=free`, `GEMINI_FREE_TIER_CONFIRMED
 
 Pago, somente após verificar a conta: `AI_ENABLED=true`, `AI_BILLING_MODE=paid`, `GEMINI_PAID_TIER_CONFIRMED=true`, `GEMINI_FREE_TIER_CONFIRMED=false`, `AI_INTERACTIVE_ENABLED=true`, `AI_TOTAL_BUDGET_USD=4.5`, `AI_DAILY_LIMIT=13`, `GEMINI_MODEL=gemini-3.5-flash-lite`.
 
-Ative somente na produção para evitar consumo duplicado. `PUBLIC_ORIGIN` é o host HTTPS sem subpasta. `.env.example` permanece desativado. A conta deve iniciar com o pré-pagamento proposto de US$ 5; qualquer aumento exige nova decisão do proprietário.
+Ative somente na produção para evitar consumo duplicado. `PUBLIC_ORIGIN` é o host HTTPS sem subpasta. `.env.example` permanece desativado. O valor inicialmente proposto era US$ 5, mas a conta exigiu mínimo regional de R$ 150, pago diretamente pelo proprietário. Não há novas recargas autorizadas nem renovação automática do orçamento local.
 
 ## Referências
 

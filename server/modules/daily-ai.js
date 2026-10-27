@@ -121,7 +121,12 @@ export function createDailyAI(db, gemini, { fetcher = fetch, clock = () => Date.
       (!features.content && !features.contests && !features.statistics)
     )
       return { skipped: true };
-    if (db.prepare('SELECT 1 FROM ai_daily_runs WHERE day=?').get(day)) return { skipped: true };
+    if (db.prepare('SELECT 1 FROM ai_daily_runs WHERE day=?').get(day)) {
+      try {
+        await updateStatisticsInsight(db, gemini, clock());
+      } catch {}
+      return { skipped: true };
+    }
     const claimed = db
       .prepare("INSERT OR IGNORE INTO ai_daily_runs VALUES(?,?,NULL,'running','{}')")
       .run(day, new Date(clock()).toISOString());

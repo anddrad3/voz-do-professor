@@ -1,18 +1,19 @@
 // Friendly version labels assigned to the actual Git milestones; these are not Git tags.
-export const PLATFORM_VERSION = '3.0.0-pre.3';
+export const PLATFORM_VERSION = '3.0.0';
 export const RELEASES = [
   {
     version: PLATFORM_VERSION,
     date: '2026-10-27',
     title: 'Nova engenharia de dados',
-    status: 'Em implantação',
+    status: 'Publicada',
     commits: [],
     changes: [
       'Histórico de versões no painel.',
+      'Conta principal responsável pela IA, recarga automática desligada e teto mensal de R$ 25 no Google, além do orçamento acumulado de US$ 4,50 no site.',
       'Estatísticas públicas com gráficos por período e interpretação diária por IA de contagens reais.',
       'Consultas só contribuem para contadores coletivos por tema e estado com consentimento opcional; grupos menores que cinco ficam ocultos.',
       'Catálogo diário às 08h com até 20 notícias inéditas resumidas por Gemini; prioridade Franca e região, SP, Brasil e exterior.',
-      'Consultas guiadas com busca Google para vagas, notícias, legislação, piso e concursos; ativação depende do plano pré-pago verificado.',
+      'Consultas guiadas com busca Google para vagas, notícias, legislação, piso e concursos; API pré-paga ativada e busca real validada.',
       'Consultas salvas em Meus Alertas, apenas no navegador por até 90 dias.',
       'Contabilidade de tokens, buscas e orçamento acumulado; limites persistentes, pausa pelo proprietário e nenhum aumento automático do orçamento.',
       'Exclusão definitiva de relatos com confirmação.',
