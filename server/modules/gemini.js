@@ -95,6 +95,7 @@ export const questionSchema = z
       .default(''),
     consent: z.literal(true),
     eligible: z.literal(true),
+    statisticsConsent: z.boolean().default(false),
   })
   .strict()
   .superRefine((q, ctx) => {

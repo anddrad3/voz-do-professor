@@ -6,6 +6,7 @@ import { voice, survey, story, withdrawal } from './modules/voice.js';
 import { profile, notifications, submitProfile } from './modules/profile.js';
 import { transparency } from './modules/transparency.js';
 import { jobsPage, submitAssistant, chatAction } from './modules/assistant.js';
+import { statisticsPage, setStatisticsPeriod } from './modules/statistics.js';
 const nav = [
   ['inicio', 'Início', 'house', null],
   ['direitos', 'Direitos e Notícias', 'newspaper', 'content'],
@@ -13,6 +14,7 @@ const nav = [
   ['oportunidades', 'Oportunidades', 'briefcase-business', 'opportunity'],
   ['concursos', 'Concursos públicos', 'calendar-days', 'contests'],
   ['voz', 'Voz do Professor', 'messages-square', 'voice'],
+  ['estatisticas', 'Estatísticas', 'chart-pie', 'statistics'],
   ['alertas', 'Meus Alertas', 'bell', 'alerts'],
   ['perfil', 'Minha Sala de Aula', 'chalkboard-user', 'preferences'],
   ['transparencia', 'Transparência', 'shield-check', null],
@@ -100,6 +102,9 @@ async function render() {
           break;
         case 'voz':
           output = await voice();
+          break;
+        case 'estatisticas':
+          output = await statisticsPage();
           break;
         case 'perfil':
           output = await profile();
@@ -329,6 +334,9 @@ document.addEventListener('submit', async (e) => {
   try {
     if (type === 'assistant') {
       await submitAssistant(form, e.submitter);
+    } else if (type === 'statistics') {
+      setStatisticsPeriod(form);
+      await render();
     } else if (type === 'filter') {
       state.filters[form.dataset.kind] = v;
       await render();

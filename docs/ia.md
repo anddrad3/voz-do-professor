@@ -49,3 +49,11 @@ Ative somente na produção para evitar consumo duplicado. `PUBLIC_ORIGIN` é o 
 - [Agendamentos Alwaysdata](https://help.alwaysdata.com/en/docs/web-hosting/tasks/)
 
 - [Faturamento, Prepay e atraso de contabilização](https://ai.google.dev/gemini-api/docs/billing)
+
+## Estatísticas e conta responsável
+
+A conta principal `matheusilvaandradecontato@gmail.com` foi escolhida para a ativação paga. `vozdoprofessoroficial@gmail.com` permanece como destino dos formulários. O estado efetivo de ativação deve ser conferido no painel.
+
+O ciclo diário inclui uma segunda chamada, quando necessário, para interpretar contagens públicas dos últimos 12 meses. Nada de texto de relatos, perguntas ou contatos é enviado nessa etapa. As consultas contribuem somente mediante `statisticsConsent=true` separado e opcional. O contador mensal armazena tema, estado e quantidade; retém até 24 meses. Apenas grupos a partir de cinco são exibidos. Não mede pessoas únicas nem popularidade geral; a amostra é autoselecionada. As contagens das publicações refletem o catálogo atualmente publicado, não um histórico imutável de posts retirados.
+
+A interpretação é vinculada a um hash dos números e do período: mudanças ou outros períodos ocultam o texto antigo. Uma falha do resumo não impede os gráficos nem desfaz o catálogo; não há nova chamada por visita ou filtro.

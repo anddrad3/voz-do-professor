@@ -18,6 +18,7 @@ export function openDatabase(path = process.env.DATABASE_PATH || 'data/public-v2
   CREATE TABLE IF NOT EXISTS ai_usage(id TEXT PRIMARY KEY,day TEXT NOT NULL,at INTEGER NOT NULL,purpose TEXT NOT NULL,client TEXT NOT NULL,status TEXT NOT NULL);
   CREATE INDEX IF NOT EXISTS ai_usage_at ON ai_usage(at);
   CREATE TABLE IF NOT EXISTS ai_daily_runs(day TEXT PRIMARY KEY,started_at TEXT NOT NULL,finished_at TEXT,status TEXT NOT NULL,summary TEXT NOT NULL);
+  CREATE TABLE IF NOT EXISTS statistics_queries(month TEXT NOT NULL,topic TEXT NOT NULL,state TEXT NOT NULL,total INTEGER NOT NULL,PRIMARY KEY(month,topic,state));
   `);
   const usageColumns = db
     .prepare('PRAGMA table_info(ai_usage)')

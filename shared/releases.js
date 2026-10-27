@@ -1,5 +1,5 @@
 // Friendly version labels assigned to the actual Git milestones; these are not Git tags.
-export const PLATFORM_VERSION = '3.0.0-pre.2';
+export const PLATFORM_VERSION = '3.0.0-pre.3';
 export const RELEASES = [
   {
     version: PLATFORM_VERSION,
@@ -9,6 +9,8 @@ export const RELEASES = [
     commits: [],
     changes: [
       'Histórico de versões no painel.',
+      'Estatísticas públicas com gráficos por período e interpretação diária por IA de contagens reais.',
+      'Consultas só contribuem para contadores coletivos por tema e estado com consentimento opcional; grupos menores que cinco ficam ocultos.',
       'Catálogo diário às 08h com até 20 notícias inéditas resumidas por Gemini; prioridade Franca e região, SP, Brasil e exterior.',
       'Consultas guiadas com busca Google para vagas, notícias, legislação, piso e concursos; ativação depende do plano pré-pago verificado.',
       'Consultas salvas em Meus Alertas, apenas no navegador por até 90 dias.',

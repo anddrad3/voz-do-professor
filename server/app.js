@@ -11,6 +11,7 @@ import { admin } from './modules/admin.js';
 import { adminAuth } from './modules/admin-auth.js';
 import { mediaDirectory } from './modules/news-media.js';
 import { assistantRouter } from './modules/assistant.js';
+import { statistics, defaultPeriod, periodSchema } from './modules/statistics.js';
 function foundation() {
   const app = express();
   app.disable('x-powered-by');
@@ -104,6 +105,12 @@ export function createApp(db, { staticDir = resolve('dist'), automation, gemini 
     r.kind !== 'school' &&
     !(r.kind === 'content' && r.type === 'Piso salarial');
   app.get('/api/health', (req, res) => res.json({ ok: true }));
+  app.get('/api/statistics', (req, res) => {
+    if (!settings(db).features.statistics) return res.sendStatus(404);
+    const period = Object.keys(req.query).length ? periodSchema.parse(req.query) : defaultPeriod();
+    const { digest, ...report } = statistics(db, period);
+    res.json(report);
+  });
   app.get('/media/:file', (req, res) => {
     if (
       !settings(db).features.content ||

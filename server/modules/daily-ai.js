@@ -11,6 +11,7 @@ import {
 } from './regional-news.js';
 import { enrichEbc, pruneMedia } from './news-media.js';
 import { settings } from './settings.js';
+import { updateStatisticsInsight } from './statistics.js';
 const parser = new XMLParser({ ignoreAttributes: false, processEntities: false });
 const clean = (value) =>
   String(value || '')
@@ -117,7 +118,7 @@ export function createDailyAI(db, gemini, { fetcher = fetch, clock = () => Date.
       busy ||
       !status.enabled ||
       status.ownerPaused ||
-      (!features.content && !features.contests)
+      (!features.content && !features.contests && !features.statistics)
     )
       return { skipped: true };
     if (db.prepare('SELECT 1 FROM ai_daily_runs WHERE day=?').get(day)) return { skipped: true };
@@ -284,6 +285,11 @@ export function createDailyAI(db, gemini, { fetcher = fetch, clock = () => Date.
       );
       return { failed: true };
     } finally {
+      try {
+        await updateStatisticsInsight(db, gemini, clock());
+      } catch {
+        // A failed insight never discards published catalog items and is not retried automatically.
+      }
       busy = false;
     }
   }

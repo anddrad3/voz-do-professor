@@ -5,6 +5,8 @@ import {
   faList,
   faScaleBalanced,
   faClock,
+  faChartPie,
+  faWandMagicSparkles,
 } from '@fortawesome/free-solid-svg-icons';
 const faIcons = {
   'chalkboard-user': faChalkboardUser,
@@ -12,6 +14,8 @@ const faIcons = {
   list: faList,
   scale: faScaleBalanced,
   clock: faClock,
+  'chart-pie': faChartPie,
+  sparkles: faWandMagicSparkles,
 };
 import {
   createIcons,

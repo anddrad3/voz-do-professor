@@ -3,6 +3,7 @@ export const FEATURES = {
   school: 'Radar de Escolas',
   opportunity: 'Oportunidades',
   contests: 'Concursos públicos',
+  statistics: 'Estatísticas públicas',
   voice: 'Relatos e formulários',
   survey: 'Pesquisas em PDF',
   alerts: 'Alertas locais',

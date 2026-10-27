@@ -1398,3 +1398,63 @@ main[data-view='list'] .masonry > .card {
 .ai-answer .meta {
   margin-bottom: 1rem;
 }
+.stats-totals {
+  margin-block: 1rem;
+}
+.stats-totals strong {
+  font-size: 2.4rem;
+  font-weight: 650;
+}
+.stats-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+}
+.stats-chart {
+  min-width: 0;
+}
+.stats-bars {
+  display: grid;
+  gap: 0.85rem;
+}
+.stats-row > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.85rem;
+}
+.stats-track {
+  height: 0.6rem;
+  background: var(--border);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-top: 0.35rem;
+}
+.stats-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+.stats-donut {
+  display: flex;
+  gap: 1.2rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.stats-donut svg {
+  width: 160px;
+  height: 160px;
+  flex-shrink: 0;
+}
+.stats-donut ul {
+  list-style: none;
+  padding: 0;
+  font-size: 0.85rem;
+  display: grid;
+  gap: 0.6rem;
+}
+.stats-dot {
+  display: inline-block;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  margin-right: 0.5rem;
+}

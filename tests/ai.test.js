@@ -242,6 +242,14 @@ test('catálogo inicia às 08h de Brasília uma vez por dia e publica apenas IDs
       assert.equal(opts.json, true);
       assert.ok(!opts.grounded);
       const data = JSON.parse(prompt.split('Dados: ')[1]);
+      if (!Array.isArray(data))
+        return {
+          model: config.model,
+          text: JSON.stringify({
+            summary:
+              'Há quatro referências no catálogo. Os números não representam todos os professores.',
+          }),
+        };
       return {
         model: config.model,
         text: JSON.stringify({
@@ -270,7 +278,7 @@ test('catálogo inicia às 08h de Brasília uma vez por dia e publica apenas IDs
   assert.equal(calls, 0);
   at += 60000;
   assert.equal((await daily.run()).updated, 4);
-  assert.equal(calls, 1);
+  assert.equal(calls, 2);
   assert.equal((await daily.run()).skipped, true);
   assert.equal(records(db, 'content').length, 4);
   assert.ok(records(db, 'content').every((r) => r.aiGenerated && r.sourceUrl));

@@ -40,7 +40,15 @@ O painel inclui exclusão definitiva de relatos e histórico dos marcos reais do
 
 [Arquitetura e limitações da IA](docs/ia.md). [Histórico das fontes anteriores](docs/automacao.md).
 
-## Publicação sem cobrança
+## Estatísticas públicas
+
+Em `#/estatisticas`, gráficos de composição, publicações por mês, localidade e assuntos consultados permitem selecionar até 24 meses. Os números vêm do catálogo publicado e de contadores opcionais de consultas de IA concluídas. Não são visitantes únicos, não representam todos os professores e não incluem respostas dos PDFs enviados por e-mail.
+
+Consultas só contribuem quando o visitante marca consentimento estatístico separado. Guardamos totais por mês, tema e estado, sem pergunta, cidade, coordenadas ou identificador; categorias com menos de cinco consultas ficam ocultas. O contador é mantido por até 24 meses. Relatos são apenas contados; seus textos não entram na IA estatística.
+
+A interpretação por IA é gerada no ciclo diário para os últimos 12 meses, somente com as contagens. É ocultada se o período ou números mudarem. Abrir gráficos e trocar filtros não chama o Gemini. A ferramenta possui toggle próprio no painel e respeita o mesmo orçamento acumulado da API.
+
+## Hospedagem
 
 Preparado para Node 24 + SQLite no Alwaysdata Free. O plano gratuito atualmente tem 1 GB de disco e 256 MB de RAM, é para uso não lucrativo e restringe endereços ao subdomínio alwaysdata.net da conta. A hospedagem continua gratuita; a API Gemini é um serviço separado e pode ter cobrança quando ativada em modo pago autorizado. Esses limites exigem catálogo e sincronização limitados. O fornecedor pode alterar regras; não há garantia técnica de gratuidade eterna ou disponibilidade 100%.
 
