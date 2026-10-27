@@ -1,3 +1,7 @@
+# Histórico da automação v2
+
+Esta descrição documenta a versão anterior. A versão 3 substitui a rotina por [catálogo diário com IA](ia.md); a coleta CNPJ e a atualização de vagas por APIs antigas não são executadas pelo servidor atual.
+
 # Automação, fontes e condições de uso
 
 Verificação em 25/10/2026. Reutilização depende das condições de cada fonte; estar na internet não elimina direitos autorais nem obrigações de privacidade. A escolha técnica é minimizar: metadados e links, atribuição, sem corpos integrais das notícias, com trechos e fotos apenas nas condições de reprodução explicitadas abaixo. Isto documenta a análise de fontes, não oferece garantia jurídica universal.

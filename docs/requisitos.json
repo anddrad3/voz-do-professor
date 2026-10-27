@@ -65,86 +65,86 @@
   {
     "id": "2.1",
     "title": "Mapa interativo de instituições de ensino",
-    "implementation": "Mapa Leaflet com marcadores e popups vinculados aos perfis",
-    "verification": "Radar → Abrir mapa interativo",
-    "files": "src/modules/catalog.js; server/modules/imports.js"
+    "implementation": "Substituído pelo pedido de 26/10/2026: coleta do Radar removida; preservados somente filtros e geolocalização local.",
+    "verification": "Radar vazio com aviso de nova integração; API de escolas não fornece registros antigos.",
+    "files": "src/modules/catalog.js; src/app.js; server/app.js"
   },
   {
     "id": "2.2",
     "title": "Localizador de escolas próximas",
-    "implementation": "Busca por município, referência aproximada pela base e geolocalização opcional",
-    "verification": "Radar → Município / centro das escolas",
-    "files": "src/modules/catalog.js; server/modules/imports.js"
+    "implementation": "Substituído pelo pedido de 26/10/2026: coleta do Radar removida; preservados somente filtros e geolocalização local.",
+    "verification": "Radar vazio com aviso de nova integração; API de escolas não fornece registros antigos.",
+    "files": "src/modules/catalog.js; src/app.js; server/app.js"
   },
   {
     "id": "2.3",
     "title": "Filtro por município e região",
-    "implementation": "Filtros por município e UF",
-    "verification": "Radar → filtros territoriais",
-    "files": "src/modules/catalog.js; server/modules/imports.js"
+    "implementation": "Substituído pelo pedido de 26/10/2026: coleta do Radar removida; preservados somente filtros e geolocalização local.",
+    "verification": "Radar vazio com aviso de nova integração; API de escolas não fornece registros antigos.",
+    "files": "src/modules/catalog.js; src/app.js; server/app.js"
   },
   {
     "id": "2.4",
     "title": "Cadastro automatizado de instituições",
-    "implementation": "Rotina Python mensal em lotes diários limitados por tráfego/tempo, ativos CNAE85; catálogo parcial para hospedagem gratuita. APIs de notícias/vagas a cada6h.",
-    "verification": "Painel privado → Automação; origem RFB e limites de lote.",
-    "files": "scripts/rfb-sync.py; server/modules/rfb.js; server/modules/automation.js"
+    "implementation": "Substituído pelo pedido de 26/10/2026: coleta do Radar removida; preservados somente filtros e geolocalização local.",
+    "verification": "Radar vazio com aviso de nova integração; API de escolas não fornece registros antigos.",
+    "files": "src/modules/catalog.js; src/app.js; server/app.js"
   },
   {
     "id": "2.5",
     "title": "Classificação por atividade educacional",
-    "implementation": "Rotina Python mensal em lotes diários limitados por tráfego/tempo, ativos CNAE85; catálogo parcial para hospedagem gratuita. APIs de notícias/vagas a cada6h.",
-    "verification": "Painel privado → Automação; origem RFB e limites de lote.",
-    "files": "scripts/rfb-sync.py; server/modules/rfb.js; server/modules/automation.js"
+    "implementation": "Substituído pelo pedido de 26/10/2026: coleta do Radar removida; preservados somente filtros e geolocalização local.",
+    "verification": "Radar vazio com aviso de nova integração; API de escolas não fornece registros antigos.",
+    "files": "src/modules/catalog.js; src/app.js; server/app.js"
   },
   {
     "id": "2.6",
     "title": "Cruzamento com o Censo Escolar",
-    "implementation": "Cruzamento exato por CNPJ/Inep e fila de divergências",
-    "verification": "Importador Censo; teste de cruzamento",
-    "files": "src/modules/catalog.js; server/modules/imports.js"
+    "implementation": "Substituído pelo pedido de 26/10/2026: coleta do Radar removida; preservados somente filtros e geolocalização local.",
+    "verification": "Radar vazio com aviso de nova integração; API de escolas não fornece registros antigos.",
+    "files": "src/modules/catalog.js; src/app.js; server/app.js"
   },
   {
     "id": "2.7",
     "title": "Perfil informativo das instituições",
-    "implementation": "Perfil com endereço, rede, contatos e procedência disponíveis",
-    "verification": "Radar → Ver detalhes",
-    "files": "src/modules/catalog.js; server/modules/imports.js"
+    "implementation": "Substituído pelo pedido de 26/10/2026: coleta do Radar removida; preservados somente filtros e geolocalização local.",
+    "verification": "Radar vazio com aviso de nova integração; API de escolas não fornece registros antigos.",
+    "files": "src/modules/catalog.js; src/app.js; server/app.js"
   },
   {
     "id": "2.8",
     "title": "Filtro por rede de ensino",
-    "implementation": "Filtro municipal, estadual, federal e privado",
-    "verification": "Radar → Rede de ensino; teste combinado",
-    "files": "src/modules/catalog.js; server/modules/imports.js"
+    "implementation": "Substituído pelo pedido de 26/10/2026: coleta do Radar removida; preservados somente filtros e geolocalização local.",
+    "verification": "Radar vazio com aviso de nova integração; API de escolas não fornece registros antigos.",
+    "files": "src/modules/catalog.js; src/app.js; server/app.js"
   },
   {
     "id": "2.9",
     "title": "Pesquisa por distância",
-    "implementation": "Haversine para 5, 10, 25 e 50 km; ausência de coordenada não passa",
-    "verification": "Radar → Distância; teste de distância",
-    "files": "src/modules/catalog.js; server/modules/imports.js"
+    "implementation": "Substituído pelo pedido de 26/10/2026: coleta do Radar removida; preservados somente filtros e geolocalização local.",
+    "verification": "Radar vazio com aviso de nova integração; API de escolas não fornece registros antigos.",
+    "files": "src/modules/catalog.js; src/app.js; server/app.js"
   },
   {
     "id": "2.10",
     "title": "Indicadores territoriais de instituições",
-    "implementation": "Distribuição por município/UF recalculada com filtros",
-    "verification": "Radar → indicadores acima do mapa",
-    "files": "src/modules/catalog.js; server/modules/imports.js"
+    "implementation": "Substituído pelo pedido de 26/10/2026: coleta do Radar removida; preservados somente filtros e geolocalização local.",
+    "verification": "Radar vazio com aviso de nova integração; API de escolas não fornece registros antigos.",
+    "files": "src/modules/catalog.js; src/app.js; server/app.js"
   },
   {
     "id": "2.11",
     "title": "Lista de escolas favoritas",
-    "implementation": "Preferências, região, favoritos e alertas calculados e armazenados somente no navegador, sem conta ou sincronização pessoal.",
-    "verification": "Seu espaço / Meus alertas; conferir que rede só baixa catálogo público.",
-    "files": "src/api.js; src/modules/profile.js; shared/filter.js"
+    "implementation": "Substituído pelo pedido de 26/10/2026: coleta do Radar removida; preservados somente filtros e geolocalização local.",
+    "verification": "Radar vazio com aviso de nova integração; API de escolas não fornece registros antigos.",
+    "files": "src/modules/catalog.js; src/app.js; server/app.js"
   },
   {
     "id": "2.12",
     "title": "Acesso aos canais de candidatura",
-    "implementation": "Canal de candidatura exibido somente após conferência explícita",
-    "verification": "Gestão → Instituição → canal verificado; detalhes",
-    "files": "src/modules/catalog.js; server/modules/imports.js"
+    "implementation": "Substituído pelo pedido de 26/10/2026: coleta do Radar removida; preservados somente filtros e geolocalização local.",
+    "verification": "Radar vazio com aviso de nova integração; API de escolas não fornece registros antigos.",
+    "files": "src/modules/catalog.js; src/app.js; server/app.js"
   },
   {
     "id": "3.1",
@@ -422,9 +422,9 @@
   {
     "id": "6.5",
     "title": "Sistema de atualização de bases públicas",
-    "implementation": "Rotina Python mensal em lotes diários limitados por tráfego/tempo, ativos CNAE85; catálogo parcial para hospedagem gratuita. APIs de notícias/vagas a cada6h.",
-    "verification": "Painel privado → Automação; origem RFB e limites de lote.",
-    "files": "scripts/rfb-sync.py; server/modules/rfb.js; server/modules/automation.js"
+    "implementation": "Substituído a pedido em 26/10/2026: catálogo diário às 08h de fontes públicas com resumo Gemini, consultas individuais com busca; radar suspenso.",
+    "verification": "Painel → Automação; ativação depende de chave e confirmação de projeto Google sem faturamento.",
+    "files": "server/modules/daily-ai.js; server/modules/gemini.js"
   },
   {
     "id": "6.6",

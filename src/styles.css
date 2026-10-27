@@ -1354,3 +1354,47 @@ main[data-view='list'] .masonry > .card {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+/* Guided conversations retain the existing cards, colors and responsive layout. */
+.assistant {
+  margin: 1.5rem 0;
+}
+.ai-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+.ai-consent input {
+  flex: 0 0 auto;
+  margin-top: 0.4rem;
+  width: auto;
+}
+.ai-results:empty {
+  display: none;
+}
+.ai-results {
+  margin-top: 1.5rem;
+}
+.ai-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.8;
+}
+.ai-answer ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0;
+  list-style: none;
+}
+.google-suggestions {
+  width: 100%;
+  min-height: 150px;
+  border: 0;
+  background: white;
+  border-radius: 12px;
+}
+.ai-answer .meta {
+  margin-bottom: 1rem;
+}

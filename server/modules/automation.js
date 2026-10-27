@@ -51,7 +51,7 @@ export async function boundedFetch(
   const r = await fetcher(url, {
     signal: AbortSignal.timeout(timeout),
     headers: {
-      'User-Agent': 'VozDoProfessor/2.0 (public metadata aggregator; no article bodies)',
+      'User-Agent': 'VozDoProfessor/3.0',
       Accept: 'application/json, application/rss+xml, application/xml;q=0.9',
     },
     redirect: 'error',

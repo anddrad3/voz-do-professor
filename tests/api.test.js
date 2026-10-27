@@ -28,6 +28,75 @@ const request = (url, body, headers = {}) =>
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(body),
   });
+
+test('changelog é privado e exclusão de relato exige sessão, CSRF e confirmação, removendo revisões', async () => {
+  const f = await fixture();
+  try {
+    f.db
+      .prepare('INSERT INTO admin_users VALUES(?,?,?)')
+      .run('owner', 'Admin', await passwordHash('FixtureDelete!'));
+    const story = saveRecord(
+      f.db,
+      'story',
+      { title: 'Relato temporário', body: 'Texto autorizado', consent: true, anonymous: true },
+      'Admin',
+    );
+    publishRecord(f.db, story.id, 'Admin');
+    assert.equal((await fetch(f.adminUrl + '/api/admin/changelog')).status, 403);
+    const login = await request(f.adminUrl + '/api/admin/auth/login', {
+      password: 'FixtureDelete!',
+    });
+    const cookie = login.headers.get('set-cookie'),
+      auth = await login.json();
+    const headers = {
+      'Content-Type': 'application/json',
+      Cookie: cookie,
+      'X-CSRF-Token': auth.csrf,
+    };
+    const history = await (await fetch(f.adminUrl + '/api/admin/changelog', { headers })).json();
+    assert.ok(history.history.some((v) => v.commits.includes('1454b5f')));
+    const pause = f.adminUrl + '/api/admin/automation/pause';
+    assert.equal((await request(pause, { paused: true })).status, 403);
+    assert.equal((await request(pause, { paused: true }, { Cookie: cookie })).status, 403);
+    assert.equal((await request(pause, { paused: true, budget: 500 }, headers)).status, 400);
+    assert.equal((await request(pause, { paused: true }, headers)).status, 200);
+    assert.equal(
+      f.db.prepare("SELECT value FROM metadata WHERE key='ai-owner-paused'").get().value,
+      'true',
+    );
+    assert.equal((await request(pause, { paused: false }, headers)).status, 200);
+    const url = f.adminUrl + '/api/admin/stories/' + story.id;
+    assert.equal((await fetch(url, { method: 'DELETE', headers, body: '{}' })).status, 400);
+    assert.equal(
+      (
+        await fetch(url, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json', Cookie: cookie },
+          body: JSON.stringify({ confirmation: 'EXCLUIR' }),
+        })
+      ).status,
+      403,
+    );
+    assert.equal(
+      (
+        await fetch(url, {
+          method: 'DELETE',
+          headers,
+          body: JSON.stringify({ confirmation: 'EXCLUIR' }),
+        })
+      ).status,
+      200,
+    );
+    assert.equal(
+      f.db.prepare('SELECT COUNT(*) n FROM revisions WHERE record_id=?').get(story.id).n,
+      0,
+    );
+    assert.equal((await fetch(f.publicUrl + '/api/record/' + story.id)).status, 404);
+    assert.deepEqual(await (await fetch(f.publicUrl + '/api/records/school')).json(), []);
+  } finally {
+    await f.close();
+  }
+});
 test('subpasta mantém API pública e caminho do cookie privado corretos', async () => {
   const previous = process.env.BASE_PATH;
   process.env.BASE_PATH = '/voz-do-professor';

@@ -10,6 +10,7 @@ import { settings } from './modules/settings.js';
 import { admin } from './modules/admin.js';
 import { adminAuth } from './modules/admin-auth.js';
 import { mediaDirectory } from './modules/news-media.js';
+import { assistantRouter } from './modules/assistant.js';
 function foundation() {
   const app = express();
   app.disable('x-powered-by');
@@ -28,7 +29,13 @@ function foundation() {
           scriptSrc: ["'self'"],
           styleSrc: ["'self'", "'unsafe-inline'"],
           fontSrc: ["'self'"],
-          imgSrc: ["'self'", 'data:', 'https://*.tile.openstreetmap.org'],
+          imgSrc: [
+            "'self'",
+            'data:',
+            'https://*.tile.openstreetmap.org',
+            'https://www.google.com',
+            'https://www.gstatic.com',
+          ],
           connectSrc: ["'self'"],
           objectSrc: ["'none'"],
           baseUri: ["'self'"],
@@ -58,7 +65,7 @@ function errors(app) {
   });
   return app;
 }
-export function createApp(db, { staticDir = resolve('dist'), automation } = {}) {
+export function createApp(db, { staticDir = resolve('dist'), automation, gemini } = {}) {
   const app = foundation();
   if (process.env.ADMIN_WEB_ENABLED === 'true') {
     if (
@@ -79,7 +86,8 @@ export function createApp(db, { staticDir = resolve('dist'), automation } = {}) 
       next();
     });
   }
-  // Public service is read-only: no cookies, identities, uploads, account routes or body parser.
+  if (gemini) app.use('/api/assistant', assistantRouter(db, gemini));
+  // Only the bounded AI router accepts public POSTs; no visitor accounts or uploads.
   app.use((req, res, next) => {
     if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method))
       return res.status(405).json({ error: 'Este site não recebe dados de visitantes.' });
@@ -87,9 +95,14 @@ export function createApp(db, { staticDir = resolve('dist'), automation } = {}) 
   });
   const allowed = (r) =>
     r &&
-    settings(db).features[featureForKind(r.kind)] &&
+    settings(db).features[
+      r.kind === 'opportunity' && ['Concurso público', 'Processo simplificado'].includes(r.type)
+        ? 'contests'
+        : featureForKind(r.kind)
+    ] &&
     (!r.demo || process.env.DEMO_MODE === 'true') &&
-    (r.kind !== 'school' || r.active);
+    r.kind !== 'school' &&
+    !(r.kind === 'content' && r.type === 'Piso salarial');
   app.get('/api/health', (req, res) => res.json({ ok: true }));
   app.get('/media/:file', (req, res) => {
     if (
@@ -106,9 +119,30 @@ export function createApp(db, { staticDir = resolve('dist'), automation } = {}) 
     res.sendFile(resolve(mediaDirectory(), req.params.file));
   });
   app.get('/api/config', (req, res) =>
-    res.json({ ...settings(db), demo: process.env.DEMO_MODE === 'true' }),
+    res.json({
+      ...settings(db),
+      demo: process.env.DEMO_MODE === 'true',
+      ai: {
+        catalog: !!gemini?.status().enabled,
+        interactive: !!gemini?.status().interactiveEnabled,
+      },
+    }),
   );
   app.get('/api/records/:kind', (req, res) => {
+    if (req.params.kind === 'school') return res.json([]);
+    if (req.params.kind === 'contests')
+      return res.json(
+        settings(db).features.contests
+          ? filterRecords(
+              records(db, 'opportunity').filter(
+                (r) =>
+                  (!r.demo || process.env.DEMO_MODE === 'true') &&
+                  ['Concurso público', 'Processo simplificado'].includes(r.type),
+              ),
+              {},
+            )
+          : [],
+      );
     if (!['content', 'school', 'opportunity', 'survey', 'story'].includes(req.params.kind))
       return res.status(404).json({ error: 'Área não encontrada.' });
     // Same public dataset for everyone; preferences and coordinates are never needed here.

@@ -7,8 +7,8 @@ if (existsSync('.env')) process.loadEnvFile('.env');
 const { openDatabase } = await import('./db.js');
 const { createApp, createAdminApp } = await import('./app.js');
 const { seedDemo } = await import('./seed.js');
-const { createAutomation } = await import('./modules/automation.js');
-const { scheduleRfb } = await import('./modules/rfb.js');
+const { createDailyAI } = await import('./modules/daily-ai.js');
+const { createGemini } = await import('./modules/gemini.js');
 const { startAdminBridge, privateDirectory } = await import('./modules/admin-bridge.js');
 const db = openDatabase();
 // Provision on the HTTP host, which owns SQLite; SSH and HTTP can be separate hosts.
@@ -26,10 +26,11 @@ if (
 )
   throw new Error('Use um banco de produção separado da demonstração.');
 if (process.env.DEMO_MODE === 'true') seedDemo(db);
-const automation = createAutomation(db);
+const gemini = createGemini(db);
+const automation = createDailyAI(db, gemini);
 const port = Number(process.env.PORT) || 3001,
   host = process.env.HOST || process.env.IP || '127.0.0.1';
-const server = createApp(db, { automation }).listen(port, host, () =>
+const server = createApp(db, { automation, gemini }).listen(port, host, () =>
   console.log(`Voz do Professor: http://${host}:${port}`),
 );
 const bridgeDirectory =
@@ -56,7 +57,6 @@ if (adminServer) {
   );
 }
 if (process.env.AUTO_SYNC !== 'false') automation.start();
-const stopRfb = scheduleRfb(db);
 const stopAdminBridge = await startAdminBridge({
   directory: adminServer ? process.env.ADMIN_BRIDGE_DIR : undefined,
   port: Number(process.env.ADMIN_PORT) || 3002,
@@ -66,7 +66,6 @@ const stopAdminBridge = await startAdminBridge({
 for (const signal of ['SIGINT', 'SIGTERM'])
   process.on(signal, async () => {
     automation.stop();
-    stopRfb();
     await stopAdminBridge();
     adminServer?.close();
     server.close(() => {

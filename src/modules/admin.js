@@ -40,8 +40,8 @@ const tabs = [
   ['story', 'Relatos'],
   ['features', 'Ferramentas'],
   ['automation', 'Automação'],
+  ['changelog', 'Versões e mudanças'],
   ['content', 'Notícias e direitos'],
-  ['school', 'Instituições'],
   ['opportunity', 'Oportunidades'],
   ['survey', 'Pesquisas'],
 ];
@@ -73,7 +73,10 @@ async function render() {
     return;
   }
   let body = '';
-  if (tab === 'features') {
+  if (tab === 'changelog') {
+    const release = await request('/changelog');
+    body = `<article class="card accent-block"><div class="meta">Sua plataforma</div><h2>Versão ${h(release.version)}</h2><p>Esta é a versão do programa em execução. O modelo de IA e seu estado de ativação aparecem em Automação.</p><p>${release.commit ? external('https://github.com/anddrad3/voz-do-professor/commit/' + release.commit, 'Código desta publicação: ' + release.commit.slice(0, 7)) : 'Compilação local sem identificação de commit.'}</p></article><div class="stack">${release.history.map((v) => `<article class="card"><div class="meta">${h(v.date)} · ${h(v.status)}</div><h2>${h(v.version)} · ${h(v.title)}</h2><ul>${v.changes.map((c) => `<li>${h(c)}</li>`).join('')}</ul><div class="form-actions">${v.commits.map((c) => external('https://github.com/anddrad3/voz-do-professor/commit/' + c, 'Ver alteração ' + c)).join('')}</div></article>`).join('')}</div><p class="muted">Os nomes de versão organizam retrospectivamente os marcos reais do GitHub; não representam tags antigas do repositório.</p>`;
+  } else if (tab === 'features') {
     config = await request('/settings');
     body = `<article class="card"><h2>Ferramentas disponíveis no site</h2><p>Desativar todas deixa o conteúdo e as ferramentas vazios, mantendo somente o cabeçalho. Os dados públicos permanecem guardados para reativação.</p><div class="form-actions"><button class="button" data-action="disable-all">Desabilitar todas</button><button class="button primary" data-action="enable-all">Habilitar todas</button></div>${Object.entries(
       FEATURES,
@@ -85,12 +88,13 @@ async function render() {
       .join('')}</article>`;
   } else if (tab === 'automation') {
     const data = await request('/automation');
-    body = `<div class="form-actions"><button class="button primary" data-action="sync">Verificar atualizações</button><button class="button" data-action="refresh">Atualizar estado</button></div>${notice('Sincronização automática de notícias e vagas a cada seis horas, sem IA. O botão respeita os limites de frequência das fontes. O radar usa lotes limitados da base pública para caber na hospedagem gratuita. Falhas preservam o último catálogo.')}<div class="grid">${data.sources.map((s) => `<article class="card"><h3>${h(s.name)}</h3>${external(s.terms, 'Condições de uso')}</article>`).join('')}</div><h2>Últimas execuções</h2><div class="stack">${data.jobs.map((j) => `<article class="card"><h3>${h(j.source)} · ${h(j.status)}</h3><p>${h(j.started_at)}</p><pre>${h(j.summary)}</pre></article>`).join('') || empty('Aguardando primeira atualização')}</div>`;
+    const ai = data.ai;
+    body = `<article class="card accent-block"><h2>${ai?.enabled ? 'IA ativada' : 'IA aguardando ativação'}</h2><p>Plano: ${ai?.billingMode === 'paid' ? 'API paga com orçamento de teste' : 'Gratuito'}. Busca individual: ${ai?.interactiveEnabled ? 'habilitada' : 'aguardando ativação'}.</p><p>Modelo: ${h(ai?.model || 'Não configurado')}</p><p>Uso global: ${h(ai?.used || 0)} de ${h(ai?.limit || 0)} chamadas no período; ${h(ai?.reservedForDaily || 0)} reservadas para o catálogo.</p><p>Controle conservador de consumo: US$ ${Number(ai?.spending?.estimatedUsd || 0).toFixed(3)} de US$ ${Number(ai?.spending?.budgetUsd || 0).toFixed(2)} no orçamento acumulado de teste. Não é a fatura: inclui buscas que podem estar na franquia e US$ ${Number(ai?.spending?.uncertainUsd || 0).toFixed(3)} reservados para chamadas pendentes ou sem medição.</p><p>${h(ai?.spending?.inputTokens || 0)} tokens de entrada · ${h(ai?.spending?.outputTokens || 0)} de saída e raciocínio · ${h(ai?.spending?.searchQueries || 0)} buscas contabilizadas. O orçamento não renova mensalmente.</p><p>${ai?.ownerPaused ? 'Consultas pausadas pelo proprietário.' : 'Controle de consultas ativo.'}</p><p>Atualização diária às 08h00, horário de Brasília. O limite conta também falhas e tentativas em andamento, usa janela de 24 horas e respeita o dia do provedor.</p>${ai?.pausedUntil > Date.now() ? '<p>A IA está pausada após uma recusa do provedor. Não há repetição automática nem troca para plano pago.</p>' : ''}</article><div class="form-actions"><button class="button" data-action="ai-pause" data-paused="${!ai?.ownerPaused}">${ai?.ownerPaused ? 'Retomar IA' : 'Pausar IA'}</button><button class="button primary" data-action="sync">Verificar atualização diária</button><button class="button" data-action="refresh">Atualizar estado</button></div>${notice('O botão respeita a execução única por dia, após as 08h. Fontes públicas alimentam o catálogo; a busca Google é usada somente nas consultas individuais. A chave nunca aparece no painel. Falhas preservam o catálogo anterior.')}<div class="grid">${data.sources.map((s) => `<article class="card"><h3>${h(s.name)}</h3>${external(s.terms, 'Fonte / condições de uso')}</article>`).join('')}</div><h2>Atualizações diárias</h2><div class="stack">${(data.daily || []).map((j) => `<article class="card"><h3>${h(j.day)} · ${h(j.status)}</h3><p>${h(j.started_at)}</p><pre>${h(j.summary)}</pre></article>`).join('') || empty('Aguardando primeira atualização com IA')}</div><details><summary>Execuções da versão anterior</summary>${data.jobs.map((j) => `<p>${h(j.source)} · ${h(j.started_at)} · ${h(j.status)}</p>`).join('')}</details>`;
   } else {
     items = await request('/records/' + tab);
     if (editing !== null) body = editor(tab, items.find((r) => r.id === editing) || {});
     else
-      body = `<div class="section-title"><h2>${h(tabs.find((t) => t[0] === tab)[1])}</h2>${tab === 'story' ? '<button class="button primary" data-action="new">Adicionar relato</button>' : ''}</div><div class="stack">${items.map((r) => `<article class="card"><div class="meta">${h(r.status)} · ${r.automatic ? 'Automático' : h(r.author || 'Anônimo / curadoria')}</div><h3>${h(r.title)}</h3><p>${h((r.body || '').slice(0, 300))}</p><div class="form-actions"><button class="button small" data-action="edit" data-id="${h(r.id)}">Editar</button>${r.status !== 'published' ? `<button class="button small primary" data-action="publish" data-id="${h(r.id)}">Revisar e publicar</button>` : `<button class="button small" data-action="archive" data-id="${h(r.id)}">Retirar do site</button>`}</div></article>`).join('') || empty('Nenhum registro nesta área')}</div>`;
+      body = `<div class="section-title"><h2>${h(tabs.find((t) => t[0] === tab)[1])}</h2>${tab === 'story' ? '<button class="button primary" data-action="new">Adicionar relato</button>' : ''}</div><div class="stack">${items.map((r) => `<article class="card"><div class="meta">${h(r.status)} · ${r.automatic ? 'Automático' : h(r.author || 'Anônimo / curadoria')}</div><h3>${h(r.title)}</h3><p>${h((r.body || '').slice(0, 300))}</p><div class="form-actions"><button class="button small" data-action="edit" data-id="${h(r.id)}">Editar</button>${r.status !== 'published' ? `<button class="button small primary" data-action="publish" data-id="${h(r.id)}">Revisar e publicar</button>` : `<button class="button small" data-action="archive" data-id="${h(r.id)}">Retirar do site</button>`}${tab === 'story' ? `<button class="button small danger" data-action="delete-story" data-id="${h(r.id)}">Excluir relato</button>` : ''}</div></article>`).join('') || empty('Nenhum registro nesta área')}</div>`;
   }
   main.innerHTML =
     `<div class="section-title"><p>${h(session.name)}</p><button class="button" data-action="logout">Sair</button></div><nav class="tabs">${tabs.map(([key, label]) => `<button class="chip ${tab === key ? 'active' : ''}" data-action="tab" data-tab="${key}">${label}</button>`).join('')}</nav>` +
@@ -127,12 +131,22 @@ document.addEventListener('click', async (e) => {
         'PUT',
       );
       toast('Ferramentas atualizadas.');
+    } else if (action === 'ai-pause') {
+      await request('/automation/pause', { paused: b.dataset.paused === 'true' });
+      toast('Controle de consultas atualizado.');
     } else if (action === 'sync') {
       await request('/automation/run', {});
       toast('Verificação solicitada. Atualize o estado em alguns instantes.');
     } else if (action === 'archive') {
       await request('/records/' + encodeURIComponent(b.dataset.id) + '/archive', {});
       toast('Publicação retirada do site.');
+    } else if (action === 'delete-story') {
+      const r = items.find((r) => r.id === b.dataset.id);
+      dialog(
+        'Excluir relato definitivamente',
+        `<p>Excluir <strong>${h(r.title)}</strong> e seu histórico de revisões do banco ativo? Esta ação não pode ser desfeita no painel. Backups anteriores e e-mails recebidos não são apagados por este botão.</p><form data-form="delete-story" data-id="${h(r.id)}" class="stack">${field('confirmation', 'Digite EXCLUIR para confirmar', '', 'text', 'required autocomplete="off" pattern="EXCLUIR"')}<button class="button danger">Excluir definitivamente</button><button class="button" type="button" data-action="close-dialog">Cancelar</button></form>`,
+      );
+      return;
     } else if (action === 'publish') {
       const r = items.find((r) => r.id === b.dataset.id);
       dialog(
@@ -170,6 +184,15 @@ document.addEventListener('submit', async (e) => {
       });
       session = data.user;
       csrf = data.csrf;
+    } else if (form.dataset.form === 'delete-story') {
+      await request(
+        '/stories/' + encodeURIComponent(form.dataset.id),
+        { confirmation: v.confirmation },
+        'DELETE',
+      );
+      editing = null;
+      document.querySelector('#dialog').close();
+      toast('Relato e revisões excluídos do banco ativo.');
     } else if (form.dataset.form === 'publish') {
       if (!v.attestation) throw new Error('Confirme a revisão antes de publicar.');
       await request('/records/' + encodeURIComponent(form.dataset.id) + '/publish', {

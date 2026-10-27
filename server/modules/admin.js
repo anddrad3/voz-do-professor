@@ -5,9 +5,28 @@ import { records, unpack, now } from '../db.js';
 import { saveRecord, publishRecord, audit, qualityReport } from '../domain.js';
 import { settings, setFeatures } from './settings.js';
 import { FEATURES } from '../../shared/features.js';
+import { releaseInfo } from './releases.js';
 export function admin(db, { automation } = {}) {
   const r = Router();
   r.use(requireAdmin);
+  r.get('/changelog', (req, res) => res.json(releaseInfo()));
+  r.delete('/stories/:id', (req, res) => {
+    z.object({ confirmation: z.literal('EXCLUIR') })
+      .strict()
+      .parse(req.body);
+    const row = db.prepare("SELECT id FROM records WHERE id=? AND kind='story'").get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'Relato não encontrado.' });
+    db.exec('BEGIN IMMEDIATE');
+    try {
+      db.prepare('DELETE FROM revisions WHERE record_id=?').run(row.id);
+      db.prepare("DELETE FROM records WHERE id=? AND kind='story'").run(row.id);
+      db.exec('COMMIT');
+    } catch (error) {
+      db.exec('ROLLBACK');
+      throw error;
+    }
+    res.json({ ok: true });
+  });
   r.get('/settings', (req, res) => res.json(settings(db)));
   r.put('/settings', (req, res) => {
     const schema = z
@@ -19,12 +38,21 @@ export function admin(db, { automation } = {}) {
     res.json({
       jobs: db.prepare('SELECT * FROM imports ORDER BY started_at DESC LIMIT 30').all(),
       sources: automation?.sources || [],
+      ai: automation?.gemini?.status() || null,
+      daily: db.prepare('SELECT * FROM ai_daily_runs ORDER BY day DESC LIMIT 30').all(),
     }),
   );
   r.post('/automation/run', (req, res) => {
     if (!automation) return res.status(503).json({ error: 'Sincronização indisponível.' });
     void automation.run();
     res.status(202).json({ ok: true });
+  });
+  r.post('/automation/pause', (req, res) => {
+    const { paused } = z.object({ paused: z.boolean() }).strict().parse(req.body);
+    db.prepare(
+      "INSERT INTO metadata VALUES('ai-owner-paused',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+    ).run(String(paused));
+    res.json({ paused });
   });
   r.get('/records/:kind', (req, res) => res.json(records(db, req.params.kind, false)));
   r.post('/records/:kind', (req, res) =>

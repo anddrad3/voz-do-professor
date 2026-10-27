@@ -9,6 +9,7 @@ export const state = {
   profile: {},
   preferences: { opportunities: true, news: true, legislation: true },
   readAlerts: [],
+  chats: [],
   cacheWarning: false,
   view: 'grid',
 };
@@ -21,6 +22,16 @@ export function restoreLocal() {
     state.view = v.view === 'list' ? 'list' : 'grid';
     state.preferences = { ...state.preferences, ...v.preferences };
     state.readAlerts = Array.isArray(v.readAlerts) ? v.readAlerts : [];
+    state.chats = Array.isArray(v.chats)
+      ? v.chats
+          .filter(
+            (c) =>
+              c &&
+              typeof c.text === 'string' &&
+              Date.parse(c.generatedAt) > Date.now() - 90 * 86400000,
+          )
+          .slice(-20)
+      : [];
   } catch {
     state.cacheWarning = true;
   }
@@ -35,6 +46,7 @@ export function saveLocal() {
         view: state.view,
         preferences: state.preferences,
         readAlerts: state.readAlerts.slice(-1000),
+        chats: state.chats,
       }),
     );
   } catch {
@@ -47,6 +59,7 @@ export function clearLocal() {
   state.view = 'grid';
   state.preferences = { opportunities: true, news: true, legislation: true };
   state.readAlerts = [];
+  state.chats = [];
   state.filters = {};
   try {
     localStorage.removeItem(KEY);
@@ -66,7 +79,16 @@ export async function loadRecords(kind, query = {}) {
   if (!enabled(kind === 'story' ? 'voice' : kind)) return [];
   const result = await api(`/records/${kind}`);
   result.forEach((r) => state.records.set(r.id, r));
-  return filterRecords(result, query);
+  const filtered = filterRecords(result, query);
+  if (kind === 'content')
+    filtered.sort(
+      (a, b) =>
+        (b.firstPublishedAt || b.updatedAt || '')
+          .slice(0, 10)
+          .localeCompare((a.firstPublishedAt || a.updatedAt || '').slice(0, 10)) ||
+        (a.editorialPriority ?? 2) - (b.editorialPriority ?? 2),
+    );
+  return filtered;
 }
 export function localAlerts(items) {
   const p = state.profile,

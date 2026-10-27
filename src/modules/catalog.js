@@ -1,4 +1,5 @@
 import { api, loadRecords, state, enabled } from '../api.js';
+import { assistantPanel } from './assistant.js';
 import {
   h,
   icon,
@@ -54,8 +55,9 @@ export async function globalSearch(query) {
     heading(
       'Busca na plataforma',
       `Resultados para “${query}”`,
-      `${items.length} resultados em publicações, escolas, oportunidades e pesquisas.`,
+      `${items.length} resultados em publicações, oportunidades e pesquisas.`,
     ) +
+    assistantPanel('search', query) +
     `<form data-form="global-search" class="filters"><div class="row">${field('q', 'Palavra-chave', query, 'search', 'required')}<button class="button primary">Pesquisar</button></div></form>${viewControls(state)}<div class="masonry">${items.length ? items.map((r) => card(r, state)).join('') : empty()}</div>`
   );
 }
@@ -102,19 +104,19 @@ function filters(kind, all) {
           false,
         )}${field('lat', 'Latitude (somente local)', f.lat ?? state.profile.lat ?? '', 'number', 'step="any" min="-90" max="90"')}${field('lng', 'Longitude (somente local)', f.lng ?? state.profile.lng ?? '', 'number', 'step="any" min="-180" max="180"')}`
       : ''
-  }</div><datalist id="cities">${cities.map((c) => `<option value="${h(c)}"></option>`).join('')}</datalist><p class="filter-note">${kind === 'content' ? 'País identifica a origem da fonte. Estado/cidade indicam local citado no título, quando reconhecido sem ambiguidade; ausência de classificação não significa ausência de notícias.' : 'Distância exige coordenadas na instituição ou vaga. Registros sem coordenadas não aparecem ao aplicar um raio.'} Filtros são processados neste navegador.</p><div class="form-actions"><button class="button primary">Aplicar filtros</button><button type="button" class="button" data-action="clear-filters" data-kind="${kind}">Limpar</button>${kind !== 'content' ? `<button type="button" class="button" data-action="geolocate">${icon('locate-fixed')}Usar minha localização</button><button type="button" class="button" data-action="city-center">Centro aproximado da cidade</button>` : ''}</div></form>`;
+  }</div><datalist id="cities">${cities.map((c) => `<option value="${h(c)}"></option>`).join('')}</datalist><p class="filter-note">${kind === 'content' ? 'País identifica a origem da fonte. Estado/cidade indicam local citado no título, quando reconhecido sem ambiguidade; ausência de classificação não significa ausência de notícias.' : 'Localização e filtros ficam neste navegador. A fonte de instituições está em preparação.'} Filtros são processados neste navegador.</p><div class="form-actions"><button class="button primary">Aplicar filtros</button><button type="button" class="button" data-action="clear-filters" data-kind="${kind}">Limpar</button>${kind !== 'content' ? `<button type="button" class="button" data-action="geolocate">${icon('locate-fixed')}Usar minha localização</button>` : ''}</div></form>`;
 }
 export async function home() {
   const [posts, schools, opportunities, stories] = await Promise.all(
     ['content', 'school', 'opportunity', 'story'].map((k) => loadRecords(k)),
   );
   const links = [
-    ['school', 'radar', 'Radar de Escolas', `${schools.length} instituições`, 'map-pinned'],
+    ['school', 'radar', 'Radar de Escolas', 'Nova base em preparação', 'map-pinned'],
     [
       'opportunity',
       'oportunidades',
       'Oportunidades',
-      `${opportunities.length} anúncios`,
+      'Busca guiada com fontes',
       'briefcase-business',
     ],
     ['voice', 'voz', 'Sua voz importa', 'PDF e relatos publicados', 'messages-square'],
@@ -149,6 +151,23 @@ export async function home() {
       .join('')}</div>`
   );
 }
+export function radar() {
+  return (
+    heading(
+      'Conexões no território',
+      'Radar de Escolas',
+      'Prepare os filtros e escolha sua localização.',
+    ) +
+    filters('school', []) +
+    notice(
+      'A busca de instituições está em reformulação. Os filtros e a localização continuam disponíveis; nenhuma consulta de CNPJ ou base antiga é executada.',
+    ) +
+    empty(
+      'Nova fonte de dados em preparação',
+      'Nenhuma instituição é exibida até a nova integração ser ativada.',
+    )
+  );
+}
 export async function catalog(kind) {
   const all = await loadRecords(kind);
   const filtered = Object.values(state.filters[kind] || {}).some((v) => v !== '' && v != null)
@@ -171,6 +190,11 @@ export async function catalog(kind) {
       'Oportunidades',
       'Concursos, seleções e cadastros de reserva para a sua trajetória.',
     ],
+    contests: [
+      'Seleções na educação',
+      'Concursos públicos',
+      'Comunicados de fontes oficiais. Confirme prazos e inscrições no edital; a cobertura do catálogo é parcial.',
+    ],
   };
   let out = heading(
     ...titles[kind],
@@ -179,25 +203,16 @@ export async function catalog(kind) {
       : '',
   );
   out += filters(kind, all);
+  if (kind === 'contests') out += assistantPanel('contests');
+  if (kind === 'content') {
+    const type = state.filters.content?.type;
+    out += assistantPanel(
+      type === 'Piso salarial' ? 'salary' : !type || type === 'Notícia' ? 'news' : 'law',
+    );
+    if (type === 'Piso salarial') return out;
+  }
   if (kind === 'content')
     out += `<div class="toolbar"><button class="chip ${(state.filters.content?.type || '') === '' ? 'active' : ''}" data-action="content-category" data-value="">Recentes</button>${TYPES.map((t) => `<button class="chip ${state.filters.content?.type === t ? 'active' : ''}" data-action="content-category" data-value="${h(t)}">${h(t)}</button>`).join('')}</div>`;
-  if (kind === 'school' && enabled('map')) {
-    const grouped = {};
-    for (const s of filtered)
-      grouped[`${s.city} / ${s.state}`] = (grouped[`${s.city} / ${s.state}`] || 0) + 1;
-    out +=
-      notice(
-        'Uma instituição no mapa não significa uma vaga aberta. As bases podem ter defasagens. Confira a fonte e a data de cada registro.',
-      ) +
-      `<div class="territory-bars">${Object.entries(grouped)
-        .map(
-          ([city, count]) =>
-            `<span class="tag">${h(city)} · ${count} ${count === 1 ? 'instituição' : 'instituições'}</span>`,
-        )
-        .join(
-          '',
-        )}</div><div id="school-map" class="map map-placeholder">${icon('map-pinned')}<p class="small-text muted">Explore ${filtered.filter((s) => s.lat != null && s.lng != null).length} instituições com coordenadas.<br>O mapa utiliza imagens do OpenStreetMap, que recebe a conexão ao carregá-las.</p><button class="button" data-action="load-map">Abrir mapa interativo</button></div>`;
-  }
   if (kind === 'opportunity' && enabled('calendar') && state.showCalendar)
     out += calendar(filtered);
   out += `<div class="section-title"><span class="small-text muted">${filtered.length} ${filtered.length === 1 ? 'resultado' : 'resultados'}</span>${kind === 'opportunity' && enabled('calendar') ? '<button class="button small" data-action="export-calendar">Exportar calendário (.ics)</button>' : ''}</div>${viewControls(state)}<div class="masonry">${filtered.length ? filtered.map((r) => card(r, state)).join('') : empty()}</div>`;
@@ -237,9 +252,10 @@ export async function detail(id) {
   const dl = (pairs) =>
     `<dl class="detail-list">${pairs.map(([k, v]) => `<div><dt>${h(k)}</dt><dd>${h(v)}</dd></div>`).join('')}</dl>`;
   if (r.kind === 'content') {
-    details += r.summary
-      ? `<div class="card accent-block"><h3>Em linguagem simples</h3><p>${h(r.summary)}</p></div>`
-      : '';
+    details +=
+      r.summary && !r.aiGenerated
+        ? `<div class="card accent-block"><h3>Em linguagem simples</h3><p>${h(r.summary)}</p></div>`
+        : '';
     if (r.type === 'Piso salarial')
       details += dl([
         ['Valor', money(r.salary)],
@@ -251,38 +267,6 @@ export async function detail(id) {
   }
   if (r.kind === 'story')
     details += `<h3>${r.anonymous ? 'Relato publicado anonimamente' : h(r.author || 'Autor não informado')}</h3><p>Referência para remoção/correção: ${h(r.id)}. Baixe o formulário na área Voz do Professor e envie por e-mail.</p><a class="button" href="#/voz">Formulário de remoção ou correção</a>`;
-  if (r.kind === 'school')
-    details +=
-      dl([
-        ['Município', `${r.city} / ${r.state}`],
-        ['Rede', r.network],
-        ['Endereço', r.address || 'Não informado'],
-        ['Contato público', r.phone || 'Não informado'],
-        ['CNPJ', r.cnpj || 'Não informado'],
-        ['Código Inep', r.inepCode || 'Não informado'],
-        ['CNAE', r.cnae || 'Não informado'],
-        ['Cruzamento das bases', r.crosscheck],
-      ]) +
-      `<div class="row">${external(r.website, 'Site da instituição')}${r.recruitmentVerified ? external(r.recruitmentUrl, 'Canal de candidatura verificado') : ''}</div>` +
-      notice(
-        'A presença no radar não comprova a existência de vagas. Canais de candidatura só aparecem após verificação.',
-      ) +
-      (r.provenance?.length
-        ? `<h3>Origem dos dados</h3><div class="timeline">${r.provenance.map((p) => `<div><small>${fmtDate(p.date)}</small><p>${h(p.source)}</p>${external(p.url, 'Conferir base')}</div>`).join('')}</div>`
-        : '');
-  if (r.kind === 'school') {
-    const jobs = await loadRecords('opportunity');
-    const normalizeName = (s) =>
-      String(s || '')
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, '');
-    const matches = jobs.filter(
-      (j) => j.company && normalizeName(j.company) === normalizeName(r.title),
-    );
-    details += `<h3>Vagas encontradas por nome da instituição</h3><p class="small-text muted">Pesquisa automática nas APIs de vagas integradas. Nome coincidente não comprova vínculo com este CNPJ. Não rastreamos áreas privadas nem currículos.</p>${matches.length ? matches.map((j) => `<p>${external(j.sourceUrl, j.title + ' · ' + j.sourceName)}</p>`).join('') : '<p>Nenhuma vaga com esse nome foi encontrada nas fontes disponíveis. Isso não significa que a instituição não tenha vagas.</p>'}`;
-  }
   if (r.kind === 'opportunity')
     details +=
       dl([
@@ -300,46 +284,6 @@ export async function detail(id) {
       `<h3>Requisitos</h3><p>${h(r.requirements)}</p><h3 style="margin-top:20px">Documentação</h3><p>${h(r.documents || 'Confira a documentação no edital.')}</p><div class="form-actions">${external(r.sourceUrl, 'Edital oficial')}${external(r.registrationUrl, 'Página de inscrição')}${enabled('calendar') ? `<button class="button" data-action="export-calendar" data-id="${h(r.id)}">${icon('calendar-plus')}Salvar prazos</button>` : ''}</div>`;
   const revisions = await api(`/history/${encodeURIComponent(id)}`);
   return `<div class="detail-board"><a class="button ghost small" href="#/${back}" style="margin-bottom:24px">${icon('arrow-left')}Voltar</a><div class="detail-masonry"><article class="card"><div class="meta">${demo(r)}<span class="tag">${h(categoryLabel(r))}</span><span>${h(r.city ? `${r.city} / ${r.state}` : countryNames[r.country] || 'Localidade não informada')}</span></div><h1>${h(r.title)}</h1>${publicationAge(r)}${recordImage(r)}${r.excerpt ? `<blockquote class="excerpt"><p>${h(r.excerpt)}</p><cite>${h(r.excerptCredit)}</cite></blockquote>` : ''}<p class="body">${h(r.body)}</p><div class="form-actions">${enabled('favorites') ? `<button class="button" data-action="favorite" data-id="${h(r.id)}" aria-pressed="${state.favorites.has(r.id)}">${icon('bookmark')}${state.favorites.has(r.id) ? 'Salvo' : 'Salvar'}</button>` : ''}${enabled('audio') ? `<button class="button" data-action="audio" data-id="${h(r.id)}">${icon('play')}Ouvir</button>` : ''}<button class="button" data-action="citation" data-id="${h(r.id)}">${icon('copy')}Citar</button></div></article>${details ? `<div class="card">${details}</div>` : ''}<div class="card"><h3>Fonte e responsabilidade editorial</h3><p>${h(r.sourceName || 'Fonte não informada')}</p><p>Data da fonte: ${fmtDate(r.sourceDate)}${r.checkedAt ? `<br>Última consulta automática: ${fmtDate(r.checkedAt)}` : ''}<br>${h(r.automatic ? r.attribution : r.reviewer || 'Demonstração — sem validação humana')}<br>${h(r.locationBasis || '')}</p><div class="form-actions">${external(r.sourceUrl, 'Conferir fonte original')}</div><details><summary>Histórico de revisões</summary>${revisions.length ? revisions.map((v) => `<div class="timeline"><small>${fmtDate(v.date)} · ${h(v.reviewer)}</small><p>${h(v.summary || v.title)}</p>${external(v.sourceUrl, 'Fonte desta revisão')}</div>`).join('') : '<p class="small-text muted">Sem revisões publicadas.</p>'}</details></div></div></div>`;
-}
-export async function loadMap() {
-  const container = document.querySelector('#school-map');
-  if (!container) return;
-  const L = await import('leaflet');
-  container.innerHTML = '';
-  container.classList.remove('map-placeholder');
-  const map = L.map(container).setView([-15.78, -47.92], 4);
-  state.map = map;
-  const tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-  });
-  let reported = false;
-  tiles.on('tileerror', () => {
-    if (!reported) {
-      toast(
-        'Não foi possível carregar imagens do mapa. A lista de instituições continua disponível.',
-      );
-      reported = true;
-    }
-  });
-  tiles.addTo(map);
-  const points = [];
-  for (const s of state.currentItems || []) {
-    if (s.lat == null || s.lng == null) continue;
-    points.push([s.lat, s.lng]);
-    L.circleMarker([s.lat, s.lng], {
-      radius: 8,
-      color: '#ef4444',
-      weight: 2,
-      fillColor: '#ef4444',
-      fillOpacity: 0.45,
-    })
-      .addTo(map)
-      .bindPopup(
-        `<strong>${h(s.title)}</strong><br>${h(s.address)}<br><a href="${detailUrl(s)}">Ver instituição</a>`,
-      );
-  }
-  if (points.length) map.fitBounds(L.latLngBounds(points), { padding: [40, 40], maxZoom: 13 });
 }
 export function exportCalendar(items) {
   const esc = (s) =>

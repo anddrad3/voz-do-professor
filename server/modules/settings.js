@@ -6,8 +6,15 @@ export function settings(db) {
       db.prepare("SELECT value FROM metadata WHERE key='site-settings-v2'").get()?.value || '{}',
     );
   } catch {}
+  const defaults = defaultFeatures();
+  if (
+    saved.features &&
+    Object.values(saved.features).length &&
+    Object.values(saved.features).every((v) => v === false)
+  )
+    Object.keys(defaults).forEach((k) => (defaults[k] = false));
   return {
-    features: { ...defaultFeatures(), ...saved.features },
+    features: { ...defaults, ...saved.features },
     contactEmail: process.env.REPORT_EMAIL || 'relatos@exemplo.invalid',
   };
 }

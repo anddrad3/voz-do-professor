@@ -1,4 +1,5 @@
 import { state, loadRecords, localAlerts, saveLocal, enabled } from '../api.js';
+import { savedChats } from './assistant.js';
 import {
   viewControls,
   h,
@@ -61,6 +62,7 @@ export async function notifications() {
       'Novidades são comparadas às suas preferências quando você abre o site. Não há e-mail, push ou rastreamento.',
     ) +
     `<div class="form-actions"><a class="button" href="#/perfil">Ajustar interesses</a><button class="button" data-action="read-all">Marcar todos como lidos</button></div>` +
+    savedChats() +
     `<div class="stack">${alerts.map((r) => `<article class="notification"><div class="content"><h3><a href="#/detalhe/${encodeURIComponent(r.id)}">${h(r.title)}</a></h3><p class="muted small-text">${h(r.sourceName)} · ${r.read ? 'Lido neste navegador' : 'Novo para você'}</p></div><button class="button small" data-action="read-notification" data-id="${h(r.alertKey)}">Marcar como lido</button></article>`).join('') || empty('Nenhuma novidade para seus filtros')}</div>`
   );
 }

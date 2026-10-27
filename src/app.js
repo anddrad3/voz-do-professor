@@ -1,15 +1,17 @@
 import './styles.css';
 import { state, api, loadRecords, enabled, saveLocal, clearLocal, localAlerts } from './api.js';
 import { h, icon, refreshIcons, toast, dialog, field, empty, fmtDate, arrangeCards } from './ui.js';
-import { home, catalog, detail, loadMap, exportCalendar, globalSearch } from './modules/catalog.js';
+import { home, catalog, detail, radar, exportCalendar, globalSearch } from './modules/catalog.js';
 import { voice, survey, story, withdrawal } from './modules/voice.js';
 import { profile, notifications, submitProfile } from './modules/profile.js';
 import { transparency } from './modules/transparency.js';
+import { jobsPage, submitAssistant, chatAction } from './modules/assistant.js';
 const nav = [
   ['inicio', 'Início', 'house', null],
   ['direitos', 'Direitos e Notícias', 'newspaper', 'content'],
   ['radar', 'Radar de Escolas', 'map-pinned', 'school'],
   ['oportunidades', 'Oportunidades', 'briefcase-business', 'opportunity'],
+  ['concursos', 'Concursos públicos', 'calendar-days', 'contests'],
   ['voz', 'Voz do Professor', 'messages-square', 'voice'],
   ['alertas', 'Meus Alertas', 'bell', 'alerts'],
   ['perfil', 'Minha Sala de Aula', 'chalkboard-user', 'preferences'],
@@ -88,10 +90,13 @@ async function render() {
           output = await catalog('content');
           break;
         case 'radar':
-          output = await catalog('school');
+          output = radar();
           break;
         case 'oportunidades':
-          output = await catalog('opportunity');
+          output = jobsPage();
+          break;
+        case 'concursos':
+          output = await catalog('contests');
           break;
         case 'voz':
           output = await voice();
@@ -145,6 +150,10 @@ document.addEventListener('click', async (e) => {
   e.preventDefault();
   const action = el.dataset.action;
   try {
+    if (chatAction(action, el.dataset.id)) {
+      if (action === 'delete-chat') await render();
+      return;
+    }
     if (action === 'view') {
       state.view = el.dataset.view === 'list' ? 'list' : 'grid';
       saveLocal();
@@ -282,35 +291,6 @@ document.addEventListener('click', async (e) => {
       );
       return;
     }
-    if (action === 'city-center') {
-      const form = el.closest('form'),
-        city = form.elements.city.value.trim().toLocaleLowerCase('pt-BR');
-      if (!city) throw new Error('Informe o município primeiro.');
-      const schools = await loadRecords('school');
-      const matches = schools.filter(
-        (s) =>
-          s.city.toLocaleLowerCase('pt-BR') === city &&
-          s.lat != null &&
-          s.lng != null &&
-          (!form.elements.state.value || form.elements.state.value === s.state),
-      );
-      if (!matches.length)
-        throw new Error(
-          'Não há coordenadas dessa cidade na base. Use sua localização ou retire o raio.',
-        );
-      form.elements.lat.value = (matches.reduce((a, s) => a + s.lat, 0) / matches.length).toFixed(
-        4,
-      );
-      form.elements.lng.value = (matches.reduce((a, s) => a + s.lng, 0) / matches.length).toFixed(
-        4,
-      );
-      toast('Centro aproximado preenchido. Aplique os filtros.');
-      return;
-    }
-    if (action === 'load-map') {
-      if (enabled('map')) await loadMap();
-      return;
-    }
     if (action === 'calendar-toggle') {
       state.showCalendar = !state.showCalendar;
       await render();
@@ -347,7 +327,9 @@ document.addEventListener('submit', async (e) => {
   const type = form.dataset.form,
     v = Object.fromEntries(new FormData(form));
   try {
-    if (type === 'filter') {
+    if (type === 'assistant') {
+      await submitAssistant(form, e.submitter);
+    } else if (type === 'filter') {
       state.filters[form.dataset.kind] = v;
       await render();
     } else if (type === 'global-search') {

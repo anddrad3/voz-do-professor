@@ -15,7 +15,24 @@ export function openDatabase(path = process.env.DATABASE_PATH || 'data/public-v2
   CREATE TABLE IF NOT EXISTS admin_factors(user_id TEXT PRIMARY KEY REFERENCES admin_users(id) ON DELETE CASCADE,secret TEXT NOT NULL,last_step INTEGER NOT NULL DEFAULT -1);
   CREATE TABLE IF NOT EXISTS admin_recovery(user_id TEXT REFERENCES admin_users(id) ON DELETE CASCADE,code_hash TEXT PRIMARY KEY);
   CREATE TABLE IF NOT EXISTS admin_login_budget(id INTEGER PRIMARY KEY,attempts INTEGER NOT NULL,until INTEGER NOT NULL);
+  CREATE TABLE IF NOT EXISTS ai_usage(id TEXT PRIMARY KEY,day TEXT NOT NULL,at INTEGER NOT NULL,purpose TEXT NOT NULL,client TEXT NOT NULL,status TEXT NOT NULL);
+  CREATE INDEX IF NOT EXISTS ai_usage_at ON ai_usage(at);
+  CREATE TABLE IF NOT EXISTS ai_daily_runs(day TEXT PRIMARY KEY,started_at TEXT NOT NULL,finished_at TEXT,status TEXT NOT NULL,summary TEXT NOT NULL);
   `);
+  const usageColumns = db
+    .prepare('PRAGMA table_info(ai_usage)')
+    .all()
+    .map((c) => c.name);
+  for (const [name, type] of Object.entries({
+    billing_mode: "TEXT NOT NULL DEFAULT 'free'",
+    cost_microusd: 'INTEGER NOT NULL DEFAULT 0',
+    input_tokens: 'INTEGER NOT NULL DEFAULT 0',
+    output_tokens: 'INTEGER NOT NULL DEFAULT 0',
+    search_queries: 'INTEGER NOT NULL DEFAULT 0',
+    measured: 'INTEGER NOT NULL DEFAULT 0',
+  })) {
+    if (!usageColumns.includes(name)) db.exec(`ALTER TABLE ai_usage ADD COLUMN ${name} ${type}`);
+  }
   const columns = db
     .prepare('PRAGMA table_info(records)')
     .all()
