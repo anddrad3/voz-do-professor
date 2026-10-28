@@ -76,3 +76,7 @@ Minha Sala de Aula reúne favoritos, consultas salvas e alertas locais. A regiã
 Autoria e desenvolvimento: Matheus da Silva Andrade, mestrando em Planejamento e Análise de Políticas Públicas, FCHS/Unesp/Franca, sob orientação do Prof. Dr. Genaro Alvarenga Fonseca. O projeto visa informação, autonomia e valorização docente.
 
 Geolocalização aproximada: base aberta [Municípios Brasileiros, Kelvin S. do Prado](https://github.com/kelvins/municipios-brasileiros), licença MIT preservada em `public/data/LICENSE-municipios.txt`. A sede mais próxima é calculada no navegador, sem transmissão de coordenadas.
+
+### Guia público
+
+O guia de seis páginas está em `public/guias/guia-voz-do-professor.pdf`, com downloads na Minha Sala de Aula, em Transparência e no rodapé. O gerador `scripts/build-guide.py` usa ReportLab e cria também a cópia em `output/pdf/`. A edição 3.1.1 foi renderizada e revisada página a página.

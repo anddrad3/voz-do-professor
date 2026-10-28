@@ -169,28 +169,27 @@ export function createDailyAI(db, gemini, { fetcher = fetch, clock = () => Date.
         }
       }
       // Reference norms are identified as reference material, not newly published or newly verified laws.
-      if (!candidates.some((c) => c.data.type === 'Legislação'))
-        for (const base of LEGAL_BASES.slice(0, 3))
-          candidates.push({
-            kind: 'content',
-            basis: base.body,
-            data: {
-              title: base.name,
-              type: 'Legislação',
-              sourceName:
-                base.id === 'lei-bncc'
-                  ? 'Ministério da Educação'
-                  : 'Presidência da República / Planalto',
-              sourceUrl: base.url,
-              sourceDate: base.date,
-              scope: 'Nacional',
-              country: 'BR',
-              tags: base.tags,
-              automatic: true,
-              attribution:
-                'Referência oficial. Vigência e alterações devem ser conferidas no documento original.',
-            },
-          });
+      for (const base of LEGAL_BASES.slice(0, 3))
+        candidates.push({
+          kind: 'content',
+          basis: base.body,
+          data: {
+            title: base.name,
+            type: 'Legislação',
+            sourceName:
+              base.id === 'lei-bncc'
+                ? 'Ministério da Educação'
+                : 'Presidência da República / Planalto',
+            sourceUrl: base.url,
+            sourceDate: base.date,
+            scope: 'Nacional',
+            country: 'BR',
+            tags: base.tags,
+            automatic: true,
+            attribution:
+              'Referência oficial. Vigência e alterações devem ser conferidas no documento original.',
+          },
+        });
       const known = new Set(
         db
           .prepare(
@@ -205,7 +204,17 @@ export function createDailyAI(db, gemini, { fetcher = fetch, clock = () => Date.
         .sort((a, b) => (b.data.sourceDate || '').localeCompare(a.data.sourceDate || ''));
       const selected = [
         ...(features.content ? news : []),
-        ...other.filter((c) => features.content && c.kind === 'content').slice(0, 3),
+        ...other
+          .filter(
+            (c) =>
+              features.content && c.kind === 'content' && (rebuild || !known.has(c.data.sourceUrl)),
+          )
+          .sort(
+            (a, b) =>
+              Number(b.data.scope === 'Nacional') - Number(a.data.scope === 'Nacional') ||
+              Number(b.data.state === 'SP') - Number(a.data.state === 'SP'),
+          )
+          .slice(0, 3),
         ...other.filter((c) => features.contests && c.kind === 'opportunity').slice(0, 3),
       ].map((item, index) => ({ ...item, id: String(index + 1) }));
       if (!selected.length)

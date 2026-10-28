@@ -32,6 +32,7 @@ export async function profile() {
       'Somente neste navegador',
       'Minha Sala de Aula',
       'Sua região, publicações favoritas, vagas salvas, consultas e novidades em um só lugar.',
+      `<a class="button" href="${import.meta.env?.BASE_URL || '/'}guias/guia-voz-do-professor.pdf" download>${icon('download')}Como usar o site · Guia em PDF</a>`,
     ) +
     notice(
       'Preferências, favoritos e alertas ficam no armazenamento local deste navegador. Limpar os dados do navegador apaga essas informações. Quem usa este mesmo navegador pode vê-las.',

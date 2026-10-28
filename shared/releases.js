@@ -1,8 +1,20 @@
 // Friendly version labels assigned to the actual Git milestones; these are not Git tags.
-export const PLATFORM_VERSION = '3.1.0';
+export const PLATFORM_VERSION = '3.1.1';
 export const RELEASES = [
   {
     version: PLATFORM_VERSION,
+    date: '2026-10-28',
+    title: 'Guia de uso da plataforma',
+    status: 'Publicada',
+    commits: [],
+    changes: [
+      'Guia público de seis páginas em PDF, com links, instruções de todas as áreas e orientações de privacidade.',
+      'Download na Minha Sala de Aula, em Transparência e no rodapé.',
+      'Referências nacionais de legislação priorizadas na composição inicial do catálogo.',
+    ],
+  },
+  {
+    version: '3.1.0',
     date: '2026-10-27',
     title: 'Minha Sala de Aula e consultas utilizáveis',
     status: 'Publicada',
