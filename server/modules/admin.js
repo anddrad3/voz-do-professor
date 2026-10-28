@@ -47,6 +47,14 @@ export function admin(db, { automation } = {}) {
     void automation.run();
     res.status(202).json({ ok: true });
   });
+  r.post('/automation/rebuild', (req, res) => {
+    z.object({ confirmation: z.literal('RECRIAR NOTICIAS E LEGISLACAO') })
+      .strict()
+      .parse(req.body);
+    if (!automation) return res.status(503).json({ error: 'Sincronização indisponível.' });
+    void automation.run({ rebuild: true });
+    res.status(202).json({ ok: true });
+  });
   r.post('/automation/pause', (req, res) => {
     const { paused } = z.object({ paused: z.boolean() }).strict().parse(req.body);
     db.prepare(

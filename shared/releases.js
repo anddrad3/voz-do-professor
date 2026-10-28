@@ -1,8 +1,23 @@
 // Friendly version labels assigned to the actual Git milestones; these are not Git tags.
-export const PLATFORM_VERSION = '3.0.1';
+export const PLATFORM_VERSION = '3.1.0';
 export const RELEASES = [
   {
     version: PLATFORM_VERSION,
+    date: '2026-10-27',
+    title: 'Minha Sala de Aula e consultas utilizáveis',
+    status: 'Publicada',
+    commits: [],
+    changes: [
+      'Favoritos, consultas salvas e alertas reunidos na Minha Sala de Aula, com região reutilizada nos formulários.',
+      'Um único filtro para catálogo e consultas, com localização aproximada calculada no navegador.',
+      'Oportunidades priorizam vagas privadas e distinguem banco de talentos, anúncio e concurso.',
+      'Limites de teste ampliados para 60 chamadas globais e 30 por conexão em 24 horas, sem aumentar o orçamento financeiro.',
+      'Créditos de autoria, mestrado e orientação; apresentação do projeto de pesquisa.',
+      'Reconstrução solicitada de notícias e legislação com fontes e resumos novos, sem zerar a contabilidade da IA.',
+    ],
+  },
+  {
+    version: '3.0.1',
     date: '2026-10-27',
     title: 'Nova engenharia de dados',
     status: 'Publicada',

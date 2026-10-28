@@ -18,7 +18,7 @@ Fontes indisponíveis são listadas em Automação. O banco conserva o catálogo
 
 ## Limites e dados
 
-Chave apenas no `.env` privado do servidor, nunca no bundle, Git, PDF ou painel. Limite padrão: 13 chamadas por 24 horas/dia do provedor, três reservadas para o catálogo, duas por minuto e três por conexão. Falhas contam, sem repetição ou troca automática de modelo. Recusas 400/401/402/403/404/429 pausam chamadas por 24 horas.
+Chave apenas no `.env` privado do servidor, nunca no bundle, Git, PDF ou painel. Limite padrão: 60 chamadas por 24 horas/dia do provedor, três reservadas para o catálogo, seis por minuto e 30 por conexão. Falhas contam, sem repetição ou troca automática de modelo. Recusas 400/401/402/403/404/429 pausam chamadas por 24 horas.
 
 Em modo pago, só Gemini 3.5 Flash-Lite está autorizado, com preços verificados em 27/10/2026 (US$ 0,30/milhão de entrada, US$ 2,50/milhão de saída incluindo raciocínio, US$ 0,014/busca). A estimativa cobra internamente TODAS as buscas, mesmo dentro da franquia Google de 5.000/mês, para não depender de consumo externo do projeto. Isso pode interromper os chats antes do saldo real.
 
@@ -26,7 +26,7 @@ Reserva SQLite atômica antes de cada chamada: US$ 0,15 para consulta, US$ 0,04 
 
 Isso não é garantia financeira: o provedor decide o número de buscas, pode mudar preços e tem atraso de contabilização. Prepay deve ter recarga automática DESLIGADA e limite de gasto no provedor quando disponível. Um vazamento de chave fora do site não passa pelos nossos limites. O total local não inclui chamadas feitas em outros programas ou no AI Studio. Nenhum dado financeiro ou cartão entra no site.
 
-Chats, quando ativados, exigem consentimento, declaração de maioridade/profissional no Brasil, filtros enumerados e perguntas limitadas. Coordenadas, nome, e-mail e campos inesperados são recusados. Só haverá persistência local por escolha do usuário (20 consultas/90 dias). O servidor guarda contadores, estado da execução e hash temporário da conexão, nunca o texto da pergunta/resposta. HTTPS, validação de origem, corpo limitado e limites globais continuam aplicados. Cabeçalhos de IP enviados pelo cliente não são confiáveis; atrás do proxy, conexões podem compartilhar o mesmo limite conservador.
+Chats, quando ativados, exigem consentimento, declaração de maioridade/profissional no Brasil, filtros enumerados e perguntas limitadas. Coordenadas, nome, e-mail e campos inesperados são recusados. Só haverá persistência local por escolha do usuário (20 consultas/90 dias). O servidor guarda contadores, estado da execução e hash temporário da conexão, nunca o texto da pergunta/resposta. HTTPS, validação de origem, corpo limitado e limites globais continuam aplicados. Em produção Alwaysdata, `TRUST_ALWAYS_DATA_PROXY=true` usa X-Real-IP, preenchido pelo proxy da hospedagem. Fora desse ambiente o padrão é false e usa a conexão direta. Nenhum endereço bruto é persistido. O limite global e o orçamento financeiro independem desse identificador. Repetir a mesma consulta na mesma sessão reutiliza a resposta por seis horas.
 
 As condições gratuitas do Google permitem revisão humana e uso dos textos para melhoria de produtos; não enviar informação pessoal ou confidencial. Relatos manuais não entram em prompts de IA. A segurança do Gmail depende da senha, segundo fator e recuperação na própria conta; o site não recebe essa senha.
 
@@ -34,7 +34,7 @@ As condições gratuitas do Google permitem revisão humana e uso dos textos par
 
 Gratuito: `AI_ENABLED=true`, `AI_BILLING_MODE=free`, `GEMINI_FREE_TIER_CONFIRMED=true`, `AI_INTERACTIVE_ENABLED=false`.
 
-Pago, somente após verificar a conta: `AI_ENABLED=true`, `AI_BILLING_MODE=paid`, `GEMINI_PAID_TIER_CONFIRMED=true`, `GEMINI_FREE_TIER_CONFIRMED=false`, `AI_INTERACTIVE_ENABLED=true`, `AI_TOTAL_BUDGET_USD=4.5`, `AI_DAILY_LIMIT=13`, `GEMINI_MODEL=gemini-3.5-flash-lite`.
+Pago, somente após verificar a conta: `AI_ENABLED=true`, `AI_BILLING_MODE=paid`, `GEMINI_PAID_TIER_CONFIRMED=true`, `GEMINI_FREE_TIER_CONFIRMED=false`, `AI_INTERACTIVE_ENABLED=true`, `AI_TOTAL_BUDGET_USD=4.5`, `AI_DAILY_LIMIT=60`, `GEMINI_MODEL=gemini-3.5-flash-lite`.
 
 Ative somente na produção para evitar consumo duplicado. `PUBLIC_ORIGIN` é o host HTTPS sem subpasta. `.env.example` permanece desativado. O valor inicialmente proposto era US$ 5, mas a conta exigiu mínimo regional de R$ 150, pago diretamente pelo proprietário. Não há novas recargas autorizadas nem renovação automática do orçamento local.
 
@@ -57,3 +57,7 @@ A conta principal `matheusilvaandradecontato@gmail.com` foi escolhida para a ati
 O ciclo diário inclui uma segunda chamada, quando necessário, para interpretar contagens públicas dos últimos 12 meses. Nada de texto de relatos, perguntas ou contatos é enviado nessa etapa. As consultas contribuem somente mediante `statisticsConsent=true` separado e opcional. O contador mensal armazena tema, estado e quantidade; retém até 24 meses. Apenas grupos a partir de cinco são exibidos. Não mede pessoas únicas nem popularidade geral; a amostra é autoselecionada. As contagens das publicações refletem o catálogo atualmente publicado, não um histórico imutável de posts retirados.
 
 A interpretação é vinculada a um hash dos números e do período: mudanças ou outros períodos ocultam o texto antigo. Uma falha do resumo não impede os gráficos nem desfaz o catálogo; não há nova chamada por visita ou filtro.
+
+## Reconstrução solicitada
+
+A rota privada `/automation/rebuild` exige sessão, CSRF e confirmação literal. Busca as fontes e valida os novos resumos antes de substituir notícias e legislações em uma transação. Falha preserva o catálogo. Relatos, outras categorias e contabilidade financeira não são apagados. O custo da reconstrução também é reservado no orçamento existente.

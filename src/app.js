@@ -1,11 +1,22 @@
+import { locateForm } from './modules/location.js';
 import './styles.css';
-import { state, api, loadRecords, enabled, saveLocal, clearLocal, localAlerts } from './api.js';
+import {
+  state,
+  api,
+  loadRecords,
+  enabled,
+  saveLocal,
+  clearLocal,
+  localAlerts,
+  locationFilters,
+  toggleFavorite,
+} from './api.js';
 import { h, icon, refreshIcons, toast, dialog, field, empty, fmtDate, arrangeCards } from './ui.js';
 import { home, catalog, detail, radar, exportCalendar, globalSearch } from './modules/catalog.js';
 import { voice, survey, story, withdrawal } from './modules/voice.js';
 import { profile, notifications, submitProfile } from './modules/profile.js';
 import { transparency } from './modules/transparency.js';
-import { jobsPage, submitAssistant, chatAction } from './modules/assistant.js';
+import { jobsPage, submitAssistant, chatAction, hydrateSavedChats } from './modules/assistant.js';
 import { statisticsPage, setStatisticsPeriod } from './modules/statistics.js';
 const nav = [
   ['inicio', 'Início', 'house', null],
@@ -15,7 +26,6 @@ const nav = [
   ['concursos', 'Concursos públicos', 'calendar-days', 'contests'],
   ['voz', 'Voz do Professor', 'messages-square', 'voice'],
   ['estatisticas', 'Estatísticas', 'chart-pie', 'statistics'],
-  ['alertas', 'Meus Alertas', 'bell', 'alerts'],
   ['perfil', 'Minha Sala de Aula', 'chalkboard-user', 'preferences'],
   ['transparencia', 'Transparência', 'shield-check', null],
 ];
@@ -57,7 +67,12 @@ async function render() {
   const navigation = document.querySelector('#navigation');
   navigation.innerHTML = any
     ? nav
-        .filter((n) => !n[3] || enabled(n[3]) || (n[0] === 'perfil' && enabled('favorites')))
+        .filter(
+          (n) =>
+            !n[3] ||
+            enabled(n[3]) ||
+            (n[0] === 'perfil' && (enabled('favorites') || enabled('alerts'))),
+        )
         .map(
           ([k, label, ico]) =>
             `<a class="nav-link ${k === area ? 'active' : ''}" href="#/${k}" ${k === area ? 'aria-current="page"' : ''}>${icon(ico)}${label}</a>`,
@@ -65,7 +80,8 @@ async function render() {
         .join('')
     : '';
   document.querySelector('[data-action="search"]').hidden = !enabled('search');
-  document.querySelector('#account-link').hidden = !enabled('preferences') && !enabled('favorites');
+  document.querySelector('#account-link').hidden =
+    !enabled('preferences') && !enabled('favorites') && !enabled('alerts');
   document.querySelector('a[aria-label="Meus alertas"]').hidden = !enabled('alerts');
   document.querySelector('.footer').hidden = !any;
   document.querySelector('#environment-note').innerHTML =
@@ -78,7 +94,11 @@ async function render() {
     let output = '';
     const feature = nav.find((n) => n[0] === area)?.[3] || (area === 'busca' ? 'search' : null);
     if (!any) output = '';
-    else if (feature && !enabled(feature) && !(area === 'perfil' && enabled('favorites')))
+    else if (
+      feature &&
+      !enabled(feature) &&
+      !(area === 'perfil' && (enabled('favorites') || enabled('alerts')))
+    )
       output = empty('Área indisponível', 'Esta ferramenta está desativada no momento.');
     else
       switch (area) {
@@ -125,6 +145,7 @@ async function render() {
     if (revision !== version) return;
     main.innerHTML = output;
     main.dataset.view = state.view;
+    hydrateSavedChats(main);
     arrangeCards();
     if (output && !matchMedia('(prefers-reduced-motion: reduce)').matches)
       main.animate(
@@ -188,8 +209,7 @@ document.addEventListener('click', async (e) => {
     if (action === 'favorite') {
       if (!enabled('favorites')) return;
       const id = el.dataset.id;
-      state.favorites.has(id) ? state.favorites.delete(id) : state.favorites.add(id);
-      saveLocal();
+      toggleFavorite(id);
       document.querySelectorAll('[data-action="favorite"]').forEach((b) => {
         if (b.dataset.id !== id) return;
         const saved = state.favorites.has(id);
@@ -267,13 +287,18 @@ document.addEventListener('click', async (e) => {
       return;
     }
     if (action === 'content-category') {
-      state.filters.content = { ...(state.filters.content || {}), type: el.dataset.value };
+      state.filters.content = { ...locationFilters('content'), type: el.dataset.value };
       if (route().area === 'direitos') await render();
       else location.hash = '#/direitos';
       return;
     }
     if (action === 'clear-filters') {
-      state.filters[el.dataset.kind] = {};
+      state.filters[el.dataset.kind] = {
+        country: '',
+        state: '',
+        city: '',
+        type: state.filters[el.dataset.kind]?.type || '',
+      };
       await render();
       return;
     }
@@ -283,13 +308,14 @@ document.addEventListener('click', async (e) => {
       const form = el.closest('form');
       navigator.geolocation.getCurrentPosition(
         async (p) => {
-          form.elements.lat.value = p.coords.latitude.toFixed(4);
-          form.elements.lng.value = p.coords.longitude.toFixed(4);
-          if (form.dataset.form === 'filter') {
-            if (form.elements.radius.value === '0') form.elements.radius.value = '10';
-            form.requestSubmit();
+          try {
+            const city = await locateForm(form, p.coords);
+            toast(
+              `Região sugerida: ${city.city} / ${city.state}. Confira antes de consultar ou salvar. GPS processado somente neste navegador.`,
+            );
+          } catch (error) {
+            toast(error.message);
           }
-          toast('Localização usada somente neste navegador.');
         },
         () => toast('Localização não autorizada. Você pode escolher a região manualmente.'),
         { enableHighAccuracy: false, timeout: 12000 },
@@ -333,6 +359,15 @@ document.addEventListener('submit', async (e) => {
     v = Object.fromEntries(new FormData(form));
   try {
     if (type === 'assistant') {
+      if (e.submitter?.value === 'catalog') {
+        const allowed = ['country', 'state', 'city', 'q', 'level', 'network'];
+        state.filters[form.dataset.kind] = {
+          ...locationFilters(form.dataset.kind),
+          ...Object.fromEntries(Object.entries(v).filter(([k]) => allowed.includes(k))),
+        };
+        await render();
+        return;
+      }
       await submitAssistant(form, e.submitter);
     } else if (type === 'statistics') {
       setStatisticsPeriod(form);
@@ -359,7 +394,7 @@ document.addEventListener('submit', async (e) => {
 });
 // Clearing the country resets state/city, preventing invisible conflicting filters.
 document.addEventListener('change', (e) => {
-  const form = e.target.closest('form[data-form="filter"]');
+  const form = e.target.closest('form[data-form="filter"], form[data-form="assistant"]');
   if (!form) return;
   if (e.target.name === 'country' && e.target.value !== 'BR') {
     form.elements.state.value = '';

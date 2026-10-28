@@ -68,3 +68,11 @@ O código usa um único processo Node para público e painel administrativo. `PO
 Bancos antigos da versão 1 não são migrados nem publicados automaticamente. O banco padrão novo é `data/public-v2.sqlite`; arquivos de teste/desenvolvimento ficam ignorados no Git. Font Awesome Free (ícones gratuitos) é compilado localmente; grade/lista e tema são preferências do navegador.
 
 Relatos publicados e credenciais administrativas continuam sendo dados do servidor. Sem login público não significa invulnerabilidade; configure também logs/retenção na hospedagem.
+
+### Experiência 3.1
+
+Minha Sala de Aula reúne favoritos, consultas salvas e alertas locais. A região definida ali preenche os demais filtros, sem impedir alterações na consulta. Os formulários de catálogo e IA foram unificados. Oportunidades começa na rede privada; concursos continuam em sua própria área. Uso padrão: 60 chamadas globais e 30 por conexão em 24 horas, com orçamento acumulado inalterado de US$ 4,50.
+
+Autoria e desenvolvimento: Matheus da Silva Andrade, mestrando em Planejamento e Análise de Políticas Públicas, FCHS/Unesp/Franca, sob orientação do Prof. Dr. Genaro Alvarenga Fonseca. O projeto visa informação, autonomia e valorização docente.
+
+Geolocalização aproximada: base aberta [Municípios Brasileiros, Kelvin S. do Prado](https://github.com/kelvins/municipios-brasileiros), licença MIT preservada em `public/data/LICENSE-municipios.txt`. A sede mais próxima é calculada no navegador, sem transmissão de coordenadas.

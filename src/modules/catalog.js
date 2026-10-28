@@ -1,4 +1,4 @@
-import { api, loadRecords, state, enabled } from '../api.js';
+import { api, loadRecords, state, enabled, locationFilters } from '../api.js';
 import { assistantPanel } from './assistant.js';
 import {
   h,
@@ -76,7 +76,7 @@ const countryNames = {
   GLOBAL: 'Internacional / remoto',
 };
 function filters(kind, all) {
-  const f = state.filters[kind] || {};
+  const f = locationFilters(kind);
   const countries = uniq(all, 'country');
   if (!countries.includes('BR')) countries.push('BR');
   const cities = uniq(
@@ -132,7 +132,7 @@ export async function home() {
     heading(
       'Sua voz tem lugar aqui',
       'Informação que fortalece.',
-      'Direitos, oportunidades e experiências que conectam e valorizam quem ensina.',
+      'Informação, autonomia e valorização docente: direitos, oportunidades e escuta para apoiar quem ensina.',
       enabled('voice')
         ? `<a class="button" href="#/voz">${icon('messages-square')}Compartilhe sua experiência</a>`
         : '',
@@ -140,6 +140,7 @@ export async function home() {
     (enabled('content')
       ? `<div class="toolbar"><a class="chip active" href="#/inicio">Recentes</a>${TYPES.map((t) => `<button class="chip" data-action="content-category" data-value="${h(t)}">${h(t)}</button>`).join('')}<span class="spacer"></span><a class="button small ghost" href="#/direitos">${icon('sliders-horizontal')}Filtrar</a></div>`
       : '') +
+    `<article class="card"><div class="meta">Pesquisa e interesse público</div><h2>Uma plataforma a partir das necessidades do professor</h2><p>O Voz do Professor reúne informação profissional, direitos, oportunidades e experiências docentes para fortalecer a autonomia e a autoria pedagógica. A IA ajuda a organizar informações com fontes; as decisões sobre ensinar continuam com o professor.</p><p>Idealização e desenvolvimento: <strong>Matheus da Silva Andrade</strong>, mestrando em Planejamento e Análise de Políticas Públicas na Unesp/Franca, sob orientação do <strong>Prof. Dr. Genaro Alvarenga Fonseca</strong>.</p><a class="button small" href="#/transparencia">Conheça o projeto e sua metodologia</a></article>` +
     `${viewControls(state)}<div class="masonry">${posts
       .slice(0, 36)
       .map((p) => card(p, state))
@@ -170,9 +171,9 @@ export function radar() {
 }
 export async function catalog(kind) {
   const all = await loadRecords(kind);
-  const filtered = Object.values(state.filters[kind] || {}).some((v) => v !== '' && v != null)
-    ? await loadRecords(kind, state.filters[kind])
-    : all;
+  const { network, ...catalogFilters } = locationFilters(kind);
+  if (catalogFilters.level === 'Todos') catalogFilters.level = '';
+  const filtered = await loadRecords(kind, catalogFilters);
   state.currentItems = filtered;
   const titles = {
     content: [
@@ -202,17 +203,21 @@ export async function catalog(kind) {
       ? `<button class="button" data-action="calendar-toggle">${icon('calendar-days')}${state.showCalendar ? 'Ver cards' : 'Calendário'}</button>`
       : '',
   );
-  out += filters(kind, all);
-  if (kind === 'contests') out += assistantPanel('contests');
-  if (kind === 'content') {
-    const type = state.filters.content?.type;
-    out += assistantPanel(
-      type === 'Piso salarial' ? 'salary' : !type || type === 'Notícia' ? 'news' : 'law',
-    );
-    if (type === 'Piso salarial') return out;
-  }
   if (kind === 'content')
-    out += `<div class="toolbar"><button class="chip ${(state.filters.content?.type || '') === '' ? 'active' : ''}" data-action="content-category" data-value="">Recentes</button>${TYPES.map((t) => `<button class="chip ${state.filters.content?.type === t ? 'active' : ''}" data-action="content-category" data-value="${h(t)}">${h(t)}</button>`).join('')}</div>`;
+    out += `<div class="toolbar"><button class="chip ${!state.filters.content?.type ? 'active' : ''}" data-action="content-category" data-value="">Recentes</button>${TYPES.map((t) => `<button class="chip ${state.filters.content?.type === t ? 'active' : ''}" data-action="content-category" data-value="${h(t)}">${h(t)}</button>`).join('')}</div>`;
+  if (kind === 'content' || kind === 'contests') {
+    const type = state.filters.content?.type;
+    const topic =
+      kind === 'contests'
+        ? 'contests'
+        : type === 'Piso salarial'
+          ? 'salary'
+          : !type || type === 'Notícia'
+            ? 'news'
+            : 'law';
+    out += assistantPanel(topic, '', { kind });
+    if (topic === 'salary') return out;
+  } else out += filters(kind, all);
   if (kind === 'opportunity' && enabled('calendar') && state.showCalendar)
     out += calendar(filtered);
   out += `<div class="section-title"><span class="small-text muted">${filtered.length} ${filtered.length === 1 ? 'resultado' : 'resultados'}</span>${kind === 'opportunity' && enabled('calendar') ? '<button class="button small" data-action="export-calendar">Exportar calendário (.ics)</button>' : ''}</div>${viewControls(state)}<div class="masonry">${filtered.length ? filtered.map((r) => card(r, state)).join('') : empty()}</div>`;
@@ -242,7 +247,15 @@ function calendar(items) {
   return `<div class="section-title"><button class="icon-button" data-action="month-prev" aria-label="Mês anterior">${icon('chevron-left')}</button><h2>${h(month.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }))}</h2><button class="icon-button" data-action="month-next" aria-label="Próximo mês">${icon('chevron-right')}</button></div><div class="calendar">${['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day) => `<div class="weekday">${day}</div>`).join('')}${cells.join('')}</div>`;
 }
 export async function detail(id) {
-  const r = await api(`/record/${encodeURIComponent(id)}`);
+  let r,
+    localCopy = false;
+  try {
+    r = await api(`/record/${encodeURIComponent(id)}`);
+  } catch (error) {
+    r = state.savedRecords.find((r) => r.id === id && r.kind !== 'story');
+    if (!r || !enabled(r.kind === 'opportunity' ? 'contests' : r.kind)) throw error;
+    localCopy = true;
+  }
   state.records.set(r.id, r);
   if (r.kind === 'survey') return null;
   const back = { content: 'direitos', school: 'radar', opportunity: 'oportunidades', story: 'voz' }[
@@ -282,8 +295,8 @@ export async function detail(id) {
         ['Situação', r.situation || r.stage],
       ]) +
       `<h3>Requisitos</h3><p>${h(r.requirements)}</p><h3 style="margin-top:20px">Documentação</h3><p>${h(r.documents || 'Confira a documentação no edital.')}</p><div class="form-actions">${external(r.sourceUrl, 'Edital oficial')}${external(r.registrationUrl, 'Página de inscrição')}${enabled('calendar') ? `<button class="button" data-action="export-calendar" data-id="${h(r.id)}">${icon('calendar-plus')}Salvar prazos</button>` : ''}</div>`;
-  const revisions = await api(`/history/${encodeURIComponent(id)}`);
-  return `<div class="detail-board"><a class="button ghost small" href="#/${back}" style="margin-bottom:24px">${icon('arrow-left')}Voltar</a><div class="detail-masonry"><article class="card"><div class="meta">${demo(r)}<span class="tag">${h(categoryLabel(r))}</span><span>${h(r.city ? `${r.city} / ${r.state}` : countryNames[r.country] || 'Localidade não informada')}</span></div><h1>${h(r.title)}</h1>${publicationAge(r)}${recordImage(r)}${r.excerpt ? `<blockquote class="excerpt"><p>${h(r.excerpt)}</p><cite>${h(r.excerptCredit)}</cite></blockquote>` : ''}<p class="body">${h(r.body)}</p><div class="form-actions">${enabled('favorites') ? `<button class="button" data-action="favorite" data-id="${h(r.id)}" aria-pressed="${state.favorites.has(r.id)}">${icon('bookmark')}${state.favorites.has(r.id) ? 'Salvo' : 'Salvar'}</button>` : ''}${enabled('audio') ? `<button class="button" data-action="audio" data-id="${h(r.id)}">${icon('play')}Ouvir</button>` : ''}<button class="button" data-action="citation" data-id="${h(r.id)}">${icon('copy')}Citar</button></div></article>${details ? `<div class="card">${details}</div>` : ''}<div class="card"><h3>Fonte e responsabilidade editorial</h3><p>${h(r.sourceName || 'Fonte não informada')}</p><p>Data da fonte: ${fmtDate(r.sourceDate)}${r.checkedAt ? `<br>Última consulta automática: ${fmtDate(r.checkedAt)}` : ''}<br>${h(r.automatic ? r.attribution : r.reviewer || 'Demonstração — sem validação humana')}<br>${h(r.locationBasis || '')}</p><div class="form-actions">${external(r.sourceUrl, 'Conferir fonte original')}</div><details><summary>Histórico de revisões</summary>${revisions.length ? revisions.map((v) => `<div class="timeline"><small>${fmtDate(v.date)} · ${h(v.reviewer)}</small><p>${h(v.summary || v.title)}</p>${external(v.sourceUrl, 'Fonte desta revisão')}</div>`).join('') : '<p class="small-text muted">Sem revisões publicadas.</p>'}</details></div></div></div>`;
+  const revisions = localCopy ? [] : await api(`/history/${encodeURIComponent(id)}`);
+  return `${localCopy ? notice('Cópia salva neste navegador. A publicação não está disponível no catálogo atual; confirme datas, vigência e condições na fonte original.') : ''}<div class="detail-board"><a class="button ghost small" href="#/${back}" style="margin-bottom:24px">${icon('arrow-left')}Voltar</a><div class="detail-masonry"><article class="card"><div class="meta">${demo(r)}<span class="tag">${h(categoryLabel(r))}</span><span>${h(r.city ? `${r.city} / ${r.state}` : countryNames[r.country] || 'Localidade não informada')}</span></div><h1>${h(r.title)}</h1>${publicationAge(r)}${recordImage(r)}${r.excerpt ? `<blockquote class="excerpt"><p>${h(r.excerpt)}</p><cite>${h(r.excerptCredit)}</cite></blockquote>` : ''}<p class="body">${h(r.body)}</p><div class="form-actions">${enabled('favorites') ? `<button class="button" data-action="favorite" data-id="${h(r.id)}" aria-pressed="${state.favorites.has(r.id)}">${icon('bookmark')}${state.favorites.has(r.id) ? 'Salvo' : 'Salvar'}</button>` : ''}${enabled('audio') ? `<button class="button" data-action="audio" data-id="${h(r.id)}">${icon('play')}Ouvir</button>` : ''}<button class="button" data-action="citation" data-id="${h(r.id)}">${icon('copy')}Citar</button></div></article>${details ? `<div class="card">${details}</div>` : ''}<div class="card"><h3>Fonte e responsabilidade editorial</h3><p>${h(r.sourceName || 'Fonte não informada')}</p><p>Data da fonte: ${fmtDate(r.sourceDate)}${r.checkedAt ? `<br>Última consulta automática: ${fmtDate(r.checkedAt)}` : ''}<br>${h(r.automatic ? r.attribution : r.reviewer || 'Demonstração — sem validação humana')}<br>${h(r.locationBasis || '')}</p><div class="form-actions">${external(r.sourceUrl, 'Conferir fonte original')}</div><details><summary>Histórico de revisões</summary>${revisions.length ? revisions.map((v) => `<div class="timeline"><small>${fmtDate(v.date)} · ${h(v.reviewer)}</small><p>${h(v.summary || v.title)}</p>${external(v.sourceUrl, 'Fonte desta revisão')}</div>`).join('') : '<p class="small-text muted">Sem revisões publicadas.</p>'}</details></div></div></div>`;
 }
 export function exportCalendar(items) {
   const esc = (s) =>

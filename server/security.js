@@ -1,3 +1,4 @@
+import { isIP } from 'node:net';
 import { randomBytes, scrypt as scryptCallback, timingSafeEqual, createHash } from 'node:crypto';
 import { promisify } from 'node:util';
 const scrypt = promisify(scryptCallback);
@@ -48,13 +49,22 @@ export function csrf(req, res, next) {
     return res.status(403).json({ error: 'Sessão desatualizada. Recarregue a página.' });
   next();
 }
+// Enable only behind Alwaysdata's front proxy, which supplies X-Real-IP.
+// Keep a finite global monetary budget even if a client evades a connection quota.
+export function clientAddress(req) {
+  const remote = req.socket?.remoteAddress || '';
+  const real = req.headers?.['x-real-ip'];
+  if (process.env.TRUST_ALWAYS_DATA_PROXY === 'true' && typeof real === 'string' && isIP(real))
+    return real;
+  return remote;
+}
 export function limiter(limit = 30, windowMs = 60000) {
   const entries = new Map();
   const salt = token();
   return (req, res, next) => {
     const at = Date.now();
     for (const [k, v] of entries) if (v.until < at) entries.delete(k);
-    const key = hash(salt + (req.socket.remoteAddress || ''));
+    const key = hash(salt + clientAddress(req));
     const e = entries.get(key) || { n: 0, until: at + windowMs };
     e.n++;
     entries.set(key, e);

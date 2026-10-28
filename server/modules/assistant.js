@@ -1,5 +1,5 @@
 import { Router, json } from 'express';
-import { limiter } from '../security.js';
+import { limiter, clientAddress } from '../security.js';
 import { settings } from './settings.js';
 import { questionSchema, aiConfig } from './gemini.js';
 import { recordQuery } from './statistics.js';
@@ -42,7 +42,7 @@ export function assistantRouter(db, gemini) {
       if (!settings(db).features[feature[question.topic]])
         return res.status(403).json({ error: 'Esta ferramenta está desativada.' });
       if (!gemini) return res.status(503).json({ error: 'A IA ainda não foi ativada.' });
-      const answer = await gemini.ask(question, req.socket.remoteAddress || 'unknown');
+      const answer = await gemini.ask(question, clientAddress(req) || 'unknown');
       recordQuery(db, question);
       const sources = (answer.grounding?.groundingChunks || [])
         .map((c) => c.web)

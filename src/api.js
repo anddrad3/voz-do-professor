@@ -2,6 +2,7 @@ import { filterRecords, normalize } from '../shared/filter.js';
 export const state = {
   config: { features: {} },
   favorites: new Set(),
+  savedRecords: [],
   records: new Map(),
   filters: {},
   map: null,
@@ -19,6 +20,9 @@ export function restoreLocal() {
     const v = JSON.parse(localStorage.getItem(KEY) || '{}');
     state.favorites = new Set(Array.isArray(v.favorites) ? v.favorites : []);
     state.profile = v.profile || {};
+    state.savedRecords = Array.isArray(v.savedRecords)
+      ? v.savedRecords.filter((r) => r && typeof r.id === 'string').slice(-100)
+      : [];
     state.view = v.view === 'list' ? 'list' : 'grid';
     state.preferences = { ...state.preferences, ...v.preferences };
     state.readAlerts = Array.isArray(v.readAlerts) ? v.readAlerts : [];
@@ -43,6 +47,7 @@ export function saveLocal() {
       JSON.stringify({
         favorites: [...state.favorites],
         profile: state.profile,
+        savedRecords: state.savedRecords,
         view: state.view,
         preferences: state.preferences,
         readAlerts: state.readAlerts.slice(-1000),
@@ -55,6 +60,7 @@ export function saveLocal() {
 }
 export function clearLocal() {
   state.favorites.clear();
+  state.savedRecords = [];
   state.profile = {};
   state.view = 'grid';
   state.preferences = { opportunities: true, news: true, legislation: true };
@@ -128,3 +134,27 @@ export function localAlerts(items) {
     }));
 }
 restoreLocal();
+
+export function locationFilters(kind) {
+  return {
+    country: state.profile.country || '',
+    state: state.profile.state || '',
+    city: state.profile.city || '',
+    ...(state.filters[kind] || {}),
+  };
+}
+export function toggleFavorite(id) {
+  if (state.favorites.has(id)) {
+    state.favorites.delete(id);
+    state.savedRecords = state.savedRecords.filter((r) => r.id !== id);
+  } else {
+    state.favorites.add(id);
+    const record = state.records.get(id);
+    if (record)
+      state.savedRecords = [
+        ...state.savedRecords.filter((r) => r.id !== id),
+        { ...record, savedAt: new Date().toISOString() },
+      ].slice(-100);
+  }
+  saveLocal();
+}

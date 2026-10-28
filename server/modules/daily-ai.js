@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+import { recordSchemas } from '../domain.js';
 import { XMLParser } from 'fast-xml-parser';
 import { z } from 'zod';
 import { boundedFetch, parseSource, saveAutomatic, SOURCES } from './automation.js';
@@ -109,27 +111,28 @@ export function officialContests(xml, source, at = Date.now()) {
 export function createDailyAI(db, gemini, { fetcher = fetch, clock = () => Date.now() } = {}) {
   let busy = false,
     timer;
-  async function run() {
+  async function run({ rebuild = false } = {}) {
     const { day, hour } = brazilClock(clock());
     const status = gemini.status();
     const features = settings(db).features;
     if (
-      hour < 8 ||
+      (!rebuild && hour < 8) ||
       busy ||
       !status.enabled ||
       status.ownerPaused ||
       (!features.content && !features.contests && !features.statistics)
     )
       return { skipped: true };
-    if (db.prepare('SELECT 1 FROM ai_daily_runs WHERE day=?').get(day)) {
+    if (!rebuild && db.prepare('SELECT 1 FROM ai_daily_runs WHERE day=?').get(day)) {
       try {
         await updateStatisticsInsight(db, gemini, clock());
       } catch {}
       return { skipped: true };
     }
+    const runKey = rebuild ? `${day}:rebuild:${randomUUID()}` : day;
     const claimed = db
       .prepare("INSERT OR IGNORE INTO ai_daily_runs VALUES(?,?,NULL,'running','{}')")
-      .run(day, new Date(clock()).toISOString());
+      .run(runKey, new Date(clock()).toISOString());
     if (!claimed.changes) return { skipped: true };
     busy = true;
     const errors = [],
@@ -196,7 +199,7 @@ export function createDailyAI(db, gemini, { fetcher = fetch, clock = () => Date.
           .all()
           .map((r) => r.url),
       );
-      const news = selectDailyNews(candidates, known, clock());
+      const news = selectDailyNews(candidates, rebuild ? new Set() : known, clock());
       const other = candidates
         .filter((c) => c.data.type !== 'Notícia')
         .sort((a, b) => (b.data.sourceDate || '').localeCompare(a.data.sourceDate || ''));
@@ -221,6 +224,7 @@ export function createDailyAI(db, gemini, { fetcher = fetch, clock = () => Date.
         .parse(JSON.parse(result.text));
       const seen = new Set();
       let updated = 0;
+      const prepared = [];
       for (const item of parsed.items) {
         const source = selected.find((c) => c.id === item.id);
         if (!source || seen.has(item.id)) continue;
@@ -250,15 +254,44 @@ export function createDailyAI(db, gemini, { fetcher = fetch, clock = () => Date.
             'Resumo por IA limitado ao título, ementa ou trecho disponibilizado pela fonte.',
         };
         if (source.kind !== 'content') delete data.summary;
-        if (saveAutomatic(db, source.kind, data, source.sourceId || 'referencia-oficial'))
-          updated++;
+        recordSchemas[source.kind].parse(data);
+        prepared.push({ kind: source.kind, data, source: source.sourceId || 'referencia-oficial' });
       }
-      if (!updated && !seen.size)
-        throw new Error('A IA não retornou nenhum item com origem válida.');
+      if (!prepared.length) throw new Error('A IA não retornou nenhum item com origem válida.');
+      if (
+        rebuild &&
+        (!prepared.some((p) => p.data.type === 'Notícia') ||
+          !prepared.some((p) => p.data.type === 'Legislação'))
+      )
+        throw new Error(
+          'Reconstrução exige notícias e legislação válidas; catálogo anterior preservado.',
+        );
+      db.exec('BEGIN IMMEDIATE');
+      let removed = 0;
+      try {
+        if (rebuild) {
+          db.exec(
+            "DELETE FROM revisions WHERE record_id IN (SELECT id FROM records WHERE kind='content' AND json_extract(data,'$.type') IN ('Notícia','Legislação'))",
+          );
+          removed = db
+            .prepare(
+              "DELETE FROM records WHERE kind='content' AND json_extract(data,'$.type') IN ('Notícia','Legislação')",
+            )
+            .run().changes;
+          db.exec("DELETE FROM metadata WHERE key IN ('statistics-ai','statistics-ai-attempt-v2')");
+        }
+        for (const p of prepared) if (saveAutomatic(db, p.kind, p.data, p.source)) updated++;
+        db.exec('COMMIT');
+      } catch (error) {
+        db.exec('ROLLBACK');
+        throw error;
+      }
       db.prepare('UPDATE ai_daily_runs SET status=?,finished_at=?,summary=? WHERE day=?').run(
         errors.length ? 'partial' : 'completed',
         new Date(clock()).toISOString(),
         JSON.stringify({
+          rebuild,
+          removed,
           received: selected.length,
           news: news.length,
           updated,
@@ -266,7 +299,7 @@ export function createDailyAI(db, gemini, { fetcher = fetch, clock = () => Date.
           priority: 'Franca e região → São Paulo → Brasil → internacional',
           errors,
         }),
-        day,
+        runKey,
       );
       if (process.env.NEWS_MEDIA === 'true') await pruneMedia(db);
       db.prepare(
@@ -275,7 +308,7 @@ export function createDailyAI(db, gemini, { fetcher = fetch, clock = () => Date.
       db.prepare('DELETE FROM ai_daily_runs WHERE day<?').run(
         new Date(clock() - 90 * 86400000).toISOString().slice(0, 10),
       );
-      return { updated, errors };
+      return { updated, removed, errors };
     } catch (error) {
       db.prepare(
         "UPDATE ai_daily_runs SET status='failed',finished_at=?,summary=? WHERE day=?",
@@ -286,7 +319,7 @@ export function createDailyAI(db, gemini, { fetcher = fetch, clock = () => Date.
             'Atualização não concluída. Consulte a configuração, a cota da IA e as fontes; catálogo anterior preservado.',
           errors,
         }),
-        day,
+        runKey,
       );
       return { failed: true };
     } finally {
