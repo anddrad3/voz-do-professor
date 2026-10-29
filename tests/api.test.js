@@ -55,6 +55,27 @@ test('changelog é privado e exclusão de relato exige sessão, CSRF e confirma�
     };
     const history = await (await fetch(f.adminUrl + '/api/admin/changelog', { headers })).json();
     assert.ok(history.history.some((v) => v.commits.includes('1454b5f')));
+    const profileUrl = f.adminUrl + '/api/admin/profile';
+    assert.equal((await fetch(profileUrl)).status, 403);
+    const profileBody = JSON.stringify({ name: 'Nome privado', avatar: '' });
+    assert.equal(
+      (
+        await fetch(profileUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', Cookie: cookie },
+          body: profileBody,
+        })
+      ).status,
+      403,
+    );
+    assert.equal(
+      (await fetch(profileUrl, { method: 'PUT', headers, body: profileBody })).status,
+      200,
+    );
+    assert.equal((await (await fetch(profileUrl, { headers })).json()).name, 'Nome privado');
+    const versions = await (await fetch(f.publicUrl + '/api/versions')).json();
+    assert.ok(versions.history.length > 0);
+    assert.ok(!JSON.stringify(versions).includes('Nome privado'));
     const pause = f.adminUrl + '/api/admin/automation/pause';
     assert.equal((await request(pause, { paused: true })).status, 403);
     assert.equal((await request(pause, { paused: true }, { Cookie: cookie })).status, 403);

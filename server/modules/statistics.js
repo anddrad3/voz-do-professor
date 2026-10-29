@@ -2,11 +2,30 @@ import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import { records } from '../db.js';
 import { settings } from './settings.js';
+import { BRAZIL_STATES } from '../../shared/assistant.js';
 import { AI_TOPICS } from '../../shared/assistant.js';
 
 const month = z.string().regex(/^20\d{2}-(0[1-9]|1[0-2])$/);
 export const periodSchema = z
-  .object({ from: month, to: month })
+  .object({
+    from: month,
+    to: month,
+    state: z.enum(['', ...BRAZIL_STATES]).default(''),
+    category: z
+      .enum([
+        '',
+        'Notícia',
+        'Legislação',
+        'Piso salarial',
+        'Plano de carreira',
+        'Conselho de educação',
+        'Relatos',
+        'Pesquisas publicadas',
+        'Concurso público',
+        'Processo simplificado',
+      ])
+      .default(''),
+  })
   .strict()
   .refine(
     ({ from, to }) => from <= to && monthNumber(to) - monthNumber(from) < 24,
@@ -44,7 +63,7 @@ const sorted = (map, minimum = 1) =>
     .map(([label, value]) => ({ label, value }))
     .sort((a, b) => b.value - a.value || a.label.localeCompare(b.label));
 export function statistics(db, period = defaultPeriod()) {
-  const { from, to } = periodSchema.parse(period),
+  const { from, to, state, category } = periodSchema.parse(period),
     features = settings(db).features;
   const types = {},
     places = {},
@@ -64,6 +83,13 @@ export function statistics(db, period = defaultPeriod()) {
       if (kind === 'opportunity' && !contest) continue;
       if (!features[feature] || r.demo || (kind === 'content' && r.type === 'Piso salarial'))
         continue;
+      const label =
+        kind === 'story'
+          ? 'Relatos'
+          : kind === 'survey'
+            ? 'Pesquisas publicadas'
+            : r.type || 'Outros';
+      if ((state && r.state !== state) || (category && label !== category)) continue;
       const m = String(r.firstPublishedAt || r.updatedAt).slice(0, 7);
       if (m < from || m > to) continue;
       total++;
@@ -95,7 +121,7 @@ export function statistics(db, period = defaultPeriod()) {
   for (const row of db
     .prepare('SELECT * FROM statistics_queries WHERE month>=? AND month<=?')
     .all(from, to)) {
-    if (!features[featureByTopic[row.topic]]) continue;
+    if (!features[featureByTopic[row.topic]] || (state && row.state !== state)) continue;
     increment(topics, AI_TOPICS[row.topic] || 'Educação', row.total);
     increment(queryPlaces, row.state, row.total);
     increment(queryMonths, row.month, row.total);
@@ -103,6 +129,8 @@ export function statistics(db, period = defaultPeriod()) {
   const report = {
     from,
     to,
+    state,
+    category,
     total,
     stories,
     surveys,

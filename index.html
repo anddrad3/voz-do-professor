@@ -27,9 +27,6 @@
             id="theme-toggle"
           >
             <i data-lucide="sun"></i></button
-          ><a class="icon-button" href="#/perfil" aria-label="Meus alertas"
-            ><i data-lucide="bell"></i
-            ><span id="notification-count" class="notification-count" hidden></span></a
           ><a class="account-link" href="#/perfil" id="account-link"
             ><i data-fa="chalkboard-user"></i><span>Minha Sala de Aula</span></a
           >
@@ -37,6 +34,17 @@
       </div>
     </header>
     <div class="shell">
+      <div class="menu-control">
+        <button
+          class="button small ghost"
+          data-action="menu-toggle"
+          aria-label="Recolher menu"
+          aria-controls="navigation"
+          aria-expanded="true"
+        >
+          <span aria-hidden="true">⌃</span> Menu
+        </button>
+      </div>
       <nav class="navigation" aria-label="Navegação principal" id="navigation"></nav>
       <div id="environment-note"></div>
       <main id="main" tabindex="-1"><div class="loading">Carregando sua plataforma…</div></main>

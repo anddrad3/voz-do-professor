@@ -14,7 +14,12 @@ export function settings(db) {
   )
     Object.keys(defaults).forEach((k) => (defaults[k] = false));
   return {
-    features: { ...defaults, ...saved.features },
+    features: {
+      ...defaults,
+      ...Object.fromEntries(
+        Object.entries(saved.features || {}).filter(([key]) => Object.hasOwn(defaults, key)),
+      ),
+    },
     contactEmail: process.env.REPORT_EMAIL || 'relatos@exemplo.invalid',
   };
 }

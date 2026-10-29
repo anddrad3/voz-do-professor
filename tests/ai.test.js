@@ -164,13 +164,23 @@ test('migração de contabilidade mantém uso antigo e é idempotente', () => {
   db.close();
 });
 test('perguntas não aceitam coordenadas, email, dados arbitrários ou ausência de consentimento', () => {
-  const q = { topic: 'news', consent: true, eligible: true, state: 'SP', city: 'Franca' };
+  const q = {
+    topic: 'news',
+    consent: true,
+    eligible: true,
+    statisticsConsent: true,
+    termsVersion: '2026-10-29',
+    state: 'SP',
+    city: 'Franca',
+  };
   assert.equal(questionSchema.parse(q).city, 'Franca');
   for (const extra of [
     { lat: 20 },
     { email: 'test@example.org' },
     { consent: false },
     { eligible: false },
+    { statisticsConsent: false },
+    { termsVersion: '2026-01-01' },
     { query: 'escola 12345678900' },
     { query: 'https://other.invalid' },
     { model: 'paid' },

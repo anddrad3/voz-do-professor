@@ -4,13 +4,17 @@ Site publicado: [Voz do Professor](https://amerindia.alwaysdata.net/voz-do-profe
 
 Plataforma de informação docente com cards adaptativos, temas claro/escuro, catálogo público e administração privada. Versão 3: **sem contas de visitantes, sem upload e sem coleta de relatos ou respostas no servidor**.
 
+## Versão 3.2
+
+Relatórios estatísticos em PDF respeitam período, estado e categoria, sem nova consulta à IA. A leitura interna usa cards em cascata; menu, tema e demais ferramentas têm controles agrupados no painel. Visitantes personalizam nome/foto somente no navegador; o perfil do proprietário permanece privado no servidor. Termos e histórico de versões ficam disponíveis no site. As três confirmações são obrigatórias para consultar a IA; a mudança na contribuição estatística em 29/10/2026 está documentada nos gráficos e no guia.
+
 ## Rodar
 
 Node.js 24+. `npm ci`, `npm run build`, `npm run dev`. Abra http://127.0.0.1:5173. O ambiente de desenvolvimento usa `data/demo-v2.sqlite` e exemplos identificados; fontes automáticas também podem trazer dados reais. `AUTO_SYNC=false` desativa conexões às fontes durante testes offline.
 
 ## O que fica no navegador
 
-Preferências, região, favoritos e alertas lidos ficam no localStorage, com fallback em memória se estiver bloqueado. Na navegação normal não são enviados ao servidor. Ao solicitar uma consulta de IA, apenas os filtros informados e o assunto são enviados ao servidor e ao Google mediante consentimento. Busca local, filtros e comparação de alertas são processados no navegador. Geolocalização só é solicitada depois de um clique e suas coordenadas ficam no aparelho. Não há envio de e-mail, SMS ou push. Limpar o navegador perde essas preferências. Usuários do mesmo perfil de navegador podem vê-las.
+Nome e foto opcionais, preferências, região, favoritos e alertas lidos ficam no localStorage, com fallback em memória se estiver bloqueado. Na navegação normal não são enviados ao servidor. Ao solicitar uma consulta de IA, apenas os filtros informados e o assunto são enviados ao servidor e ao Google mediante consentimento. Busca local, filtros e comparação de alertas são processados no navegador. Geolocalização só é solicitada depois de um clique e suas coordenadas ficam no aparelho. Não há envio de e-mail, SMS ou push. Limpar o navegador perde essas preferências. Usuários do mesmo perfil de navegador podem vê-las.
 
 ## Participação por PDF
 

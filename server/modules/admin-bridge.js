@@ -28,7 +28,9 @@ export function validateBridgeRequest(request, basePath = '') {
   const allowed =
     (read &&
       (/^\/$|^\/logo\.png$|^\/assets\/[A-Za-z0-9_-]+\.(?:js|css)$/.test(path) ||
-        /^\/api\/admin\/(?:auth\/session|settings|automation|quality)$/.test(path) ||
+        /^\/api\/admin\/(?:auth\/session|settings|automation|quality|profile|changelog)$/.test(
+          path,
+        ) ||
         new RegExp(`^/api/admin/records/${kinds}$`).test(path))) ||
     (method === 'POST' &&
       (/^\/api\/admin\/(?:auth\/(?:login|logout)|automation\/run)$/.test(path) ||
@@ -36,7 +38,7 @@ export function validateBridgeRequest(request, basePath = '') {
           path,
         ))) ||
     (method === 'PUT' &&
-      (path === '/api/admin/settings' ||
+      (['/api/admin/settings', '/api/admin/profile'].includes(path) ||
         new RegExp(`^/api/admin/records/${kinds}/${recordId}$`).test(path)));
   if (!allowed) throw new Error('Route not allowed');
   if (

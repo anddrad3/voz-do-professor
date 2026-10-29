@@ -1,8 +1,24 @@
 // Friendly version labels assigned to the actual Git milestones; these are not Git tags.
-export const PLATFORM_VERSION = '3.1.1';
+export const PLATFORM_VERSION = '3.2.0';
 export const RELEASES = [
   {
     version: PLATFORM_VERSION,
+    date: '2026-10-29',
+    title: 'Relatórios, leitura em cascata e personalização',
+    status: 'Publicada',
+    commits: [],
+    changes: [
+      'Relatório estatístico em PDF gerado no navegador com período, estado e categoria selecionados, sem nova chamada à IA.',
+      'Detalhes em cascata, animações com respeito a movimento reduzido, menu recolhível e logo centralizado.',
+      'Nome e foto locais na Minha Sala de Aula; nome e foto do proprietário persistidos no servidor privado.',
+      'Ferramentas agrupadas com controles de tema, navegação, IA, localização, PDFs, versões e leitura; descrições expansíveis.',
+      'Termos e Condições publicados; três confirmações obrigatórias antes de consultas com IA, incluindo ciência da contagem agregada. Períodos anteriores tinham participação opcional.',
+      'Versões e mudanças disponíveis ao público; removidos sino redundante, pílula Conselho de educação e aba Pesquisas do painel.',
+      'Guia de uso revisado. Sugestões obrigatórias do Google preservadas sem a moldura branca adicionada pelo site.',
+    ],
+  },
+  {
+    version: '3.1.1',
     date: '2026-10-28',
     title: 'Guia de uso da plataforma',
     status: 'Publicada',

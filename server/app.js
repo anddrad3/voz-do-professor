@@ -6,6 +6,7 @@ import { sessionMiddleware, csrf, limiter } from './security.js';
 import { records, unpack } from './db.js';
 import { filterRecords } from '../shared/filter.js';
 import { featureForKind } from '../shared/features.js';
+import { releaseInfo } from './modules/releases.js';
 import { settings } from './modules/settings.js';
 import { admin } from './modules/admin.js';
 import { adminAuth } from './modules/admin-auth.js';
@@ -107,6 +108,9 @@ export function createApp(db, { staticDir = resolve('dist'), automation, gemini 
       r.kind === 'opportunity' && !['Concurso público', 'Processo simplificado'].includes(r.type)
     ) &&
     !(r.kind === 'content' && r.type === 'Piso salarial');
+  app.get('/api/versions', (req, res) =>
+    settings(db).features.versions ? res.json(releaseInfo()) : res.sendStatus(404),
+  );
   app.get('/api/health', (req, res) => res.json({ ok: true }));
   app.get('/api/statistics', (req, res) => {
     if (!settings(db).features.statistics) return res.sendStatus(404);
@@ -187,6 +191,7 @@ export function createApp(db, { staticDir = resolve('dist'), automation, gemini 
   });
   app.use('/api', (req, res) => res.status(404).json({ error: 'Rota não encontrada.' }));
   app.use((req, res, next) => {
+    if (req.path.startsWith('/guias/') && !settings(db).features.guide) return res.sendStatus(404);
     if (/^\/(admin(?:\.html)?|gestao)(\/|$)/.test(req.path)) return res.sendStatus(404);
     if (
       req.path.startsWith('/formularios/') &&

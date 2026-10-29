@@ -1,5 +1,6 @@
 import { createHmac, randomUUID } from 'node:crypto';
 import { z } from 'zod';
+import { TERMS_VERSION } from '../../shared/terms.js';
 import {
   AI_TOPICS,
   AI_ROLES,
@@ -96,7 +97,8 @@ export const questionSchema = z
       .default(''),
     consent: z.literal(true),
     eligible: z.literal(true),
-    statisticsConsent: z.boolean().default(false),
+    statisticsConsent: z.literal(true),
+    termsVersion: z.literal(TERMS_VERSION),
   })
   .strict()
   .superRefine((q, ctx) => {

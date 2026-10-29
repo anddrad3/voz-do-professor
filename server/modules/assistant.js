@@ -39,7 +39,7 @@ export function assistantRouter(db, gemini) {
     json({ limit: '6kb' }),
     async (req, res) => {
       const question = questionSchema.parse(req.body);
-      if (!settings(db).features[feature[question.topic]])
+      if (!settings(db).features.ai || !settings(db).features[feature[question.topic]])
         return res.status(403).json({ error: 'Esta ferramenta está desativada.' });
       if (!gemini) return res.status(503).json({ error: 'A IA ainda não foi ativada.' });
       const answer = await gemini.ask(question, clientAddress(req) || 'unknown');

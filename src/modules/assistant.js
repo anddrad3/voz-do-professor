@@ -1,3 +1,5 @@
+import { TERMS_VERSION } from '../../shared/terms.js';
+import { greeting } from './personalization.js';
 import { state, saveLocal, enabled, locationFilters } from '../api.js';
 import { formatAiText } from '../../shared/ai-text.js';
 import { h, heading, field, select, icon, toast, refreshIcons, empty, external } from '../ui.js';
@@ -19,7 +21,8 @@ export function attachSuggestions(root, html) {
   frame.setAttribute('sandbox', 'allow-popups allow-popups-to-escape-sandbox');
   frame.referrerPolicy = 'no-referrer';
   frame.className = 'google-suggestions';
-  frame.srcdoc = `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src https://www.google.com https://www.gstatic.com data:; base-uri 'none'"><base target="_blank">${html}`;
+  frame.style.colorScheme = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+  frame.srcdoc = `<meta name="color-scheme" content="${document.documentElement.dataset.theme === 'light' ? 'light' : 'dark'}"><style>html,body{margin:0;background:transparent;color-scheme:${document.documentElement.dataset.theme === 'light' ? 'light' : 'dark'}}</style><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src https://www.google.com https://www.gstatic.com data:; base-uri 'none'"><base target="_blank">${html}`;
   root.querySelector('.ai-suggestions')?.append(frame);
 }
 export function hydrateSavedChats(root) {
@@ -61,12 +64,12 @@ export function assistantPanel(topic = 'jobs', query = '', options = {}) {
     kind && topic !== 'salary'
       ? '<button class="button" name="action" value="catalog" formnovalidate>Filtrar publicações do site</button>'
       : '';
-  return `<section class="card assistant"><div class="meta">${icon('messages-square')} Consulta com fontes</div><h2>${h(AI_TOPICS[topic])}</h2><p>Escolha os filtros e uma pergunta. A busca só acontece quando você enviar; a disponibilidade depende do limite de consultas compartilhado.</p><form data-form="assistant" data-kind="${h(kind || topic)}" class="stack"><input type="hidden" name="topic" value="${h(topic)}"><div class="form-grid">${catalogFields}${select('state', 'Estado', BRAZIL_STATES, p.state)}${field('city', 'Cidade (opcional)', p.city || '', 'text', 'maxlength="80"')}${select('role', 'Cargo', AI_ROLES, 'Professor', false)}${select('level', 'Nível de ensino', AI_LEVELS, p.level || 'Todos', false)}${select('network', 'Rede', AI_NETWORKS, p.network || (topic === 'jobs' ? 'Privada' : 'Todas'), false)}${topic === 'search' ? field('query', 'Assunto de educação', query, 'search', 'required maxlength="120"') : ''}</div><div class="form-actions"><button type="button" class="button" data-action="geolocate">${icon('locate-fixed')}Usar minha localização</button>${localButton}<button type="button" class="button" data-action="clear-filters" data-kind="${h(kind || topic)}">Limpar filtros</button></div><p class="muted small-text">Sua região vem da Minha Sala de Aula. Você pode mudar os filtros nesta consulta. A IA só é acionada pelos botões de pergunta abaixo.</p><label class="ai-consent"><input type="checkbox" name="eligible" required> Tenho 18 anos ou mais, sou profissional da educação e estou no Brasil.</label><label class="ai-consent"><input type="checkbox" name="consent" required> Autorizo enviar estes filtros ao Google para esta consulta. Não informe dados pessoais.</label>${enabled('statistics') ? '<label class="ai-consent"><input type="checkbox" name="statisticsConsent"> Opcional: contribuir com estatísticas públicas por tema, estado e mês, sem guardar minha pergunta ou identificação.</label>' : ''}<div class="form-actions">${Object.entries(
+  return `<section class="card assistant"><div class="meta">${icon('messages-square')} Consulta com fontes</div><h2>${h(AI_TOPICS[topic])}</h2><p>Escolha os filtros e uma pergunta. A busca só acontece quando você enviar; a disponibilidade depende do limite de consultas compartilhado.</p><form data-form="assistant" data-kind="${h(kind || topic)}" class="stack"><input type="hidden" name="topic" value="${h(topic)}"><div class="form-grid">${catalogFields}${select('state', 'Estado', BRAZIL_STATES, p.state)}${field('city', 'Cidade (opcional)', p.city || '', 'text', 'maxlength="80"')}${select('role', 'Cargo', AI_ROLES, 'Professor', false)}${select('level', 'Nível de ensino', AI_LEVELS, p.level || 'Todos', false)}${select('network', 'Rede', AI_NETWORKS, p.network || (topic === 'jobs' ? 'Privada' : 'Todas'), false)}${topic === 'search' ? field('query', 'Assunto de educação', query, 'search', 'required maxlength="120"') : ''}</div><div class="form-actions"><button type="button" class="button" data-action="geolocate">${icon('locate-fixed')}Usar minha localização</button>${localButton}<button type="button" class="button" data-action="clear-filters" data-kind="${h(kind || topic)}">Limpar filtros</button></div><p class="muted small-text">Sua região vem da Minha Sala de Aula. Você pode mudar os filtros nesta consulta. A IA só é acionada pelos botões de pergunta abaixo.</p><label class="ai-consent"><input type="checkbox" name="eligible" required> Tenho 18 anos ou mais, sou profissional da educação e estou no Brasil. Li e aceito os <a href="#/termos" target="_blank" rel="noopener">Termos e Condições</a>.</label><label class="ai-consent"><input type="checkbox" name="consent" required> Autorizo enviar estes filtros ao Google para esta consulta. Não informe dados pessoais.</label><label class="ai-consent"><input type="checkbox" name="statisticsConsent" required> Concordo com a contagem agregada por tema, estado e mês quando as estatísticas estiverem habilitadas, sem guardar minha pergunta ou identificação. Esta confirmação é necessária para consultar a IA.</label><div class="form-actions">${Object.entries(
     actionsForTopic(topic),
   )
     .map(
       ([value, label]) =>
-        `<button class="button ${value === 'overview' ? 'primary' : ''}" name="action" value="${h(value)}" ${state.config.ai?.interactive === true ? '' : 'disabled title="Consultas temporariamente indisponíveis"'}>${h(label)}</button>`,
+        `<button class="button ${value === 'overview' ? 'primary' : ''}" name="action" value="${h(value)}" ${state.config.ai?.interactive === true && enabled('ai') ? '' : 'disabled title="Consultas temporariamente indisponíveis"'}>${h(label)}</button>`,
     )
     .join('')}</div></form><div class="ai-results stack" aria-live="polite"></div></section>`;
 }
@@ -76,11 +79,15 @@ export function jobsPage() {
       'Próximos passos',
       'Oportunidades',
       'Vagas privadas, bancos de talentos e canais de candidatura. Concursos têm uma área própria.',
-    ) + assistantPanel('jobs')
+    ) +
+    greeting(
+      'Escolha os filtros para procurar vagas e canais de candidatura compatíveis com seus interesses. Confirme os requisitos na fonte.',
+    ) +
+    assistantPanel('jobs')
   );
 }
 function answerMarkup(answer, saved = false) {
-  return `<article class="card ai-answer"><div class="meta">${h(answer.title)} · ${h(new Date(answer.generatedAt).toLocaleString('pt-BR'))}</div><div class="ai-text">${formatAiText(answer.text)}</div><h3>Fontes consultadas</h3><ul>${(answer.sources || []).map((s) => `<li>${external(s.url, s.title)}</li>`).join('')}</ul><p class="muted small-text">Resposta por IA (${h(answer.model)}). Confira informações, prazos e vigência nas fontes originais.</p><div class="ai-suggestions"></div>${saved ? '' : `${enabled('alerts') ? '<button class="button" data-action="save-chat">Salvar na Minha Sala de Aula</button>' : ''}`}</article>`;
+  return `<article class="card ai-answer"><div class="meta">${h(answer.title)} · ${h(new Date(answer.generatedAt).toLocaleString('pt-BR'))}</div><div class="ai-text">${formatAiText(answer.text)}</div><h3>Fontes consultadas</h3><ul>${(answer.sources || []).map((s) => `<li>${external(s.url, s.title)}</li>`).join('')}</ul><p class="muted small-text">Resposta por IA (${h(answer.model)}). Confira informações, prazos e vigência nas fontes originais.</p><div class="ai-suggestions"><p class="muted small-text">Termos utilizados · Google Search</p></div>${saved ? '' : `${enabled('alerts') ? '<button class="button" data-action="save-chat">Salvar na Minha Sala de Aula</button>' : ''}`}</article>`;
 }
 export function savedChats() {
   state.chats = (state.chats || [])
@@ -131,6 +138,7 @@ export async function submitAssistant(form, submitter) {
       }).sort(),
     ),
   );
+  values.termsVersion = TERMS_VERSION;
   values.consent = values.consent === 'on';
   values.eligible = values.eligible === 'on';
   values.statisticsConsent = values.statisticsConsent === 'on';

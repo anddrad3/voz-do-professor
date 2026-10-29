@@ -13,14 +13,17 @@ import {
   empty,
   external,
 } from '../ui.js';
-import { FEATURES } from '../../shared/features.js';
+import { avatar, readAvatar } from './personalization.js';
+import { installMotion } from './motion.js';
+import { FEATURES, FEATURE_HELP } from '../../shared/features.js';
 let session = null,
   secondFactorRequired = false,
   csrf = null,
   tab = 'story',
   items = [],
   editing = null,
-  config = null;
+  config = null,
+  owner = null;
 async function request(path, body, method = 'POST') {
   const r = await fetch(`${import.meta.env.BASE_URL}api/admin${path}`, {
     method: body === undefined ? 'GET' : method,
@@ -43,7 +46,7 @@ const tabs = [
   ['changelog', 'Versões e mudanças'],
   ['content', 'Notícias e direitos'],
   ['opportunity', 'Oportunidades'],
-  ['survey', 'Pesquisas'],
+  ['profile', 'Meu perfil'],
 ];
 function editor(kind, r = {}) {
   if (kind === 'story')
@@ -72,18 +75,27 @@ async function render() {
     main.innerHTML = `<article class="card reading"><h2>Acesso do proprietário</h2><p>${secondFactorRequired ? 'Entre com sua senha e o código de seis dígitos do aplicativo autenticador.' : 'Entre com sua senha de proprietário.'}</p><form data-form="login" class="stack">${field('password', 'Senha do painel', '', 'password', 'required autocomplete="current-password"')}${secondFactorRequired ? field('code', 'Código do autenticador ou de recuperação', '', 'text', 'required autocomplete="one-time-code" autocapitalize="off" spellcheck="false" maxlength="64"') + '<p class="muted">Sem acesso ao autenticador? Use um dos códigos de recuperação que você guardou. Cada código de recuperação funciona uma única vez.</p>' : ''}<button class="button primary">Entrar no painel</button></form></article>`;
     return;
   }
+  owner = await request('/profile');
   let body = '';
-  if (tab === 'changelog') {
+  if (tab === 'profile') {
+    body = `<article class="card reading"><h2>Perfil do proprietário</h2><p>O nome de exibição e a foto são guardados no servidor privado e acompanham seu acesso em outros dispositivos. Eles não alteram sua senha, o autenticador ou os créditos públicos do projeto.</p>${avatar(owner.avatar)}<form data-form="owner-profile" class="stack">${field('name', 'Nome de exibição', owner.name, 'text', 'required maxlength="60"')}${field('avatarFile', 'Foto (JPG, PNG ou WebP; até 5 MB)', '', 'file', 'accept="image/jpeg,image/png,image/webp"')}${check('removeAvatar', 'Remover foto', false)}<button class="button primary">Salvar perfil no servidor</button></form></article>`;
+  } else if (tab === 'changelog') {
     const release = await request('/changelog');
     body = `<article class="card accent-block"><div class="meta">Sua plataforma</div><h2>Versão ${h(release.version)}</h2><p>Esta é a versão do programa em execução. O modelo de IA e seu estado de ativação aparecem em Automação.</p><p>${release.commit ? external('https://github.com/anddrad3/voz-do-professor/commit/' + release.commit, 'Código desta publicação: ' + release.commit.slice(0, 7)) : 'Compilação local sem identificação de commit.'}</p></article><div class="stack">${release.history.map((v) => `<article class="card"><div class="meta">${h(v.date)} · ${h(v.status)}</div><h2>${h(v.version)} · ${h(v.title)}</h2><ul>${v.changes.map((c) => `<li>${h(c)}</li>`).join('')}</ul><div class="form-actions">${v.commits.map((c) => external('https://github.com/anddrad3/voz-do-professor/commit/' + c, 'Ver alteração ' + c)).join('')}</div></article>`).join('')}</div><p class="muted">Os nomes de versão organizam retrospectivamente os marcos reais do GitHub; não representam tags antigas do repositório.</p>`;
   } else if (tab === 'features') {
     config = await request('/settings');
-    body = `<article class="card"><h2>Ferramentas disponíveis no site</h2><p>Desativar todas deixa o conteúdo e as ferramentas vazios, mantendo somente o cabeçalho. Os dados públicos permanecem guardados para reativação.</p><div class="form-actions"><button class="button" data-action="disable-all">Desabilitar todas</button><button class="button primary" data-action="enable-all">Habilitar todas</button></div>${Object.entries(
-      FEATURES,
-    )
+    body = `<article class="card"><h2>Ferramentas disponíveis no site</h2><p>Desativar todas deixa o conteúdo e as ferramentas vazios, mantendo somente o cabeçalho. Os dados públicos permanecem guardados para reativação.</p><div class="form-actions"><button class="button" data-action="disable-all">Desabilitar todas</button><button class="button primary" data-action="enable-all">Habilitar todas</button></div>${[
+      ...new Set(Object.values(FEATURE_HELP).map((v) => v[0])),
+    ]
       .map(
-        ([key, label]) =>
-          `<label class="tool-switch"><span>${h(label)}</span><input type="checkbox" role="switch" aria-label="${h(label)}" data-feature="${key}" ${config.features[key] ? 'checked' : ''}></label>`,
+        (group) =>
+          `<section class="feature-group"><h3>${h(group)}</h3>${Object.entries(FEATURES)
+            .filter(([key]) => FEATURE_HELP[key][0] === group)
+            .map(
+              ([key, label]) =>
+                `<div class="feature-row"><label class="tool-switch"><span>${h(label)}</span><span class="switch-connector" aria-hidden="true"></span><input type="checkbox" role="switch" aria-label="${h(label)}" data-feature="${key}" ${config.features[key] ? 'checked' : ''}></label><details><summary>O que este controle altera</summary><p>${h(FEATURE_HELP[key][1])}</p></details></div>`,
+            )
+            .join('')}</section>`,
       )
       .join('')}</article>`;
   } else if (tab === 'automation') {
@@ -97,7 +109,7 @@ async function render() {
       body = `<div class="section-title"><h2>${h(tabs.find((t) => t[0] === tab)[1])}</h2>${tab === 'story' ? '<button class="button primary" data-action="new">Adicionar relato</button>' : ''}</div><div class="stack">${items.map((r) => `<article class="card"><div class="meta">${h(r.status)} · ${r.automatic ? 'Automático' : h(r.author || 'Anônimo / curadoria')}</div><h3>${h(r.title)}</h3><p>${h((r.body || '').slice(0, 300))}</p><div class="form-actions"><button class="button small" data-action="edit" data-id="${h(r.id)}">Editar</button>${r.status !== 'published' ? `<button class="button small primary" data-action="publish" data-id="${h(r.id)}">Revisar e publicar</button>` : `<button class="button small" data-action="archive" data-id="${h(r.id)}">Retirar do site</button>`}${tab === 'story' ? `<button class="button small danger" data-action="delete-story" data-id="${h(r.id)}">Excluir relato</button>` : ''}</div></article>`).join('') || empty('Nenhum registro nesta área')}</div>`;
   }
   main.innerHTML =
-    `<div class="section-title"><p>${h(session.name)}</p><button class="button" data-action="logout">Sair</button></div><nav class="tabs">${tabs.map(([key, label]) => `<button class="chip ${tab === key ? 'active' : ''}" data-action="tab" data-tab="${key}">${label}</button>`).join('')}</nav>` +
+    `<div class="section-title"><div class="personal-greeting">${avatar(owner.avatar)}<strong>${h(owner.name)}</strong></div><button class="button" data-action="logout">Sair</button></div><nav class="tabs">${tabs.map(([key, label]) => `<button class="chip ${tab === key ? 'active' : ''}" data-action="tab" data-tab="${key}">${label}</button>`).join('')}</nav>` +
     body;
   refreshIcons();
 }
@@ -184,6 +196,15 @@ document.addEventListener('submit', async (e) => {
       });
       session = data.user;
       csrf = data.csrf;
+    } else if (form.dataset.form === 'owner-profile') {
+      const photo = await readAvatar(form.elements.avatarFile.files[0]);
+      owner = await request(
+        '/profile',
+        { name: v.name, avatar: v.removeAvatar ? '' : photo || owner.avatar || '' },
+        'PUT',
+      );
+      session.name = owner.name;
+      toast('Perfil salvo no servidor privado.');
     } else if (form.dataset.form === 'delete-story') {
       await request(
         '/stories/' + encodeURIComponent(form.dataset.id),
@@ -225,6 +246,7 @@ document.addEventListener('submit', async (e) => {
     toast(error.message);
   }
 });
+installMotion();
 request('/auth/session')
   .then((data) => {
     session = data.user;

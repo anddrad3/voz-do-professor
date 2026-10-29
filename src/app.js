@@ -1,3 +1,7 @@
+import { versionsPage } from './modules/versions.js';
+import { termsPage } from './modules/transparency.js';
+import { greeting } from './modules/personalization.js';
+import { installMotion } from './modules/motion.js';
 import { locateForm } from './modules/location.js';
 import './styles.css';
 import {
@@ -17,7 +21,7 @@ import { voice, survey, story, withdrawal } from './modules/voice.js';
 import { profile, notifications, submitProfile } from './modules/profile.js';
 import { transparency } from './modules/transparency.js';
 import { jobsPage, submitAssistant, chatAction, hydrateSavedChats } from './modules/assistant.js';
-import { statisticsPage, setStatisticsPeriod } from './modules/statistics.js';
+import { statisticsPage, setStatisticsPeriod, exportStatistics } from './modules/statistics.js';
 const nav = [
   ['inicio', 'Início', 'house', null],
   ['direitos', 'Direitos e Notícias', 'newspaper', 'content'],
@@ -27,6 +31,7 @@ const nav = [
   ['voz', 'Voz do Professor', 'messages-square', 'voice'],
   ['estatisticas', 'Estatísticas', 'chart-pie', 'statistics'],
   ['perfil', 'Minha Sala de Aula', 'chalkboard-user', 'preferences'],
+  ['versoes', 'Versões e mudanças', 'clock', 'versions'],
   ['transparencia', 'Transparência', 'shield-check', null],
 ];
 let version = 0,
@@ -82,7 +87,14 @@ async function render() {
   document.querySelector('[data-action="search"]').hidden = !enabled('search');
   document.querySelector('#account-link').hidden =
     !enabled('preferences') && !enabled('favorites') && !enabled('alerts');
-  document.querySelector('a[aria-label="Meus alertas"]').hidden = !enabled('alerts');
+  document.querySelector('#theme-toggle').hidden = !enabled('theme');
+  document.querySelector('[data-action="menu-toggle"]').hidden = !any || !enabled('navigation');
+  if (!enabled('navigation')) {
+    navigation.hidden = false;
+    document.querySelector('[data-action="menu-toggle"]').setAttribute('aria-expanded', 'true');
+  }
+  document.querySelector('.footer a[download]').hidden = !enabled('guide');
+  if (!enabled('viewModes')) state.view = 'grid';
   document.querySelector('.footer').hidden = !any;
   document.querySelector('#environment-note').innerHTML =
     any && state.config.demo
@@ -132,6 +144,12 @@ async function render() {
         case 'alertas':
           output = await notifications();
           break;
+        case 'versoes':
+          output = await versionsPage();
+          break;
+        case 'termos':
+          output = termsPage();
+          break;
         case 'transparencia':
           output = transparency();
           break;
@@ -143,7 +161,17 @@ async function render() {
           output = empty('Página não encontrada');
       }
     if (revision !== version) return;
-    main.innerHTML = output;
+    main.innerHTML =
+      (any && ['inicio', 'direitos', 'radar', 'concursos'].includes(area)
+        ? greeting('Explore as informações e ajuste os filtros à sua região.')
+        : '') + output;
+    main
+      .querySelectorAll('[data-action="geolocate"]')
+      .forEach((b) => (b.hidden = !enabled('geolocation')));
+    main
+      .querySelectorAll('[data-action="citation"]')
+      .forEach((b) => (b.hidden = !enabled('citations')));
+    main.querySelectorAll('.view-controls').forEach((b) => (b.hidden = !enabled('viewModes')));
     main.dataset.view = state.view;
     hydrateSavedChats(main);
     arrangeCards();
@@ -186,8 +214,18 @@ document.addEventListener('click', async (e) => {
       await render();
       return;
     }
+    if (action === 'menu-toggle') {
+      const nav = document.querySelector('#navigation');
+      nav.hidden = !nav.hidden;
+      el.setAttribute('aria-expanded', String(!nav.hidden));
+      el.setAttribute('aria-label', nav.hidden ? 'Expandir menu' : 'Recolher menu');
+      return;
+    }
     if (action === 'theme') {
       theme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
+      document
+        .querySelectorAll('.google-suggestions')
+        .forEach((f) => (f.style.colorScheme = document.documentElement.dataset.theme));
       return;
     }
     if (action === 'close-dialog') {
@@ -202,7 +240,7 @@ document.addEventListener('click', async (e) => {
       if (!enabled('search')) return;
       dialog(
         'Buscar na plataforma',
-        `<form data-form="global-search" class="stack">${field('q', 'Palavra-chave', '', 'search', 'required autofocus')}<button class="button primary">Pesquisar</button></form>`,
+        `<form data-form="global-search" class="stack">${field('q', 'Palavra-chave', '', 'search', 'required autofocus')}<label class="ai-consent"><input type="checkbox" required> Li e aceito os <a href="#/termos" target="_blank" rel="noopener">Termos e Condições</a>.</label><button class="button primary">Pesquisar</button></form>`,
       );
       return;
     }
@@ -225,6 +263,7 @@ document.addEventListener('click', async (e) => {
           ? 'Salvo apenas nesta sessão: armazenamento bloqueado.'
           : 'Favoritos atualizados neste navegador.',
       );
+      if (route().area === 'perfil') await render();
       return;
     }
     if (action === 'clear-local') {
@@ -372,6 +411,7 @@ document.addEventListener('submit', async (e) => {
     } else if (type === 'statistics') {
       setStatisticsPeriod(form);
       await render();
+      if (e.submitter?.value === 'pdf') await exportStatistics();
     } else if (type === 'filter') {
       state.filters[form.dataset.kind] = v;
       await render();
@@ -380,7 +420,7 @@ document.addEventListener('submit', async (e) => {
       const dest = '#/busca/' + encodeURIComponent(v.q.trim());
       if (location.hash === dest) await render();
       else location.hash = dest;
-    } else if (submitProfile(type, form, v)) {
+    } else if (await submitProfile(type, form, v)) {
       await render();
       toast(
         state.cacheWarning
@@ -411,6 +451,7 @@ window.addEventListener('pagehide', () => window.speechSynthesis?.cancel());
 window.addEventListener('storage', (e) => {
   if (e.key === 'voz-local-v2') location.reload();
 });
+installMotion();
 void render().catch((e) => {
   document.querySelector('#main').innerHTML = empty('Servidor indisponível', e.message);
 });
