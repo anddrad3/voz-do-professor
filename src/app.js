@@ -1,7 +1,8 @@
 import { versionsPage } from './modules/versions.js';
 import { termsPage } from './modules/transparency.js';
 import { greeting } from './modules/personalization.js';
-import { installMotion } from './modules/motion.js';
+import { installMotion, animateContent } from './modules/motion.js';
+import { enhanceNavigation, toggleMenu } from './modules/navigation.js';
 import { locateForm } from './modules/location.js';
 import './styles.css';
 import {
@@ -36,6 +37,7 @@ const nav = [
 ];
 let version = 0,
   speechId = null;
+const routeTrail = [location.hash || '#/inicio'];
 function theme(value) {
   document.documentElement.dataset.theme = value;
   const b = document.querySelector('#theme-toggle');
@@ -68,6 +70,7 @@ async function render() {
   }
   // Recheck switches every navigation; a disabled section is also blocked on the server.
   state.config = await api('/config');
+  if (revision !== version) return;
   const any = Object.values(state.config.features).some(Boolean);
   const navigation = document.querySelector('#navigation');
   navigation.innerHTML = any
@@ -162,9 +165,13 @@ async function render() {
       }
     if (revision !== version) return;
     main.innerHTML =
+      (any && area !== 'inicio' && !output.includes('data-action="back"')
+        ? `<a href="#/inicio" class="button ghost small page-back" data-action="back">${icon('arrow-left')}Voltar</a>`
+        : '') +
       (any && ['inicio', 'direitos', 'radar', 'concursos'].includes(area)
         ? greeting('Explore as informações e ajuste os filtros à sua região.')
-        : '') + output;
+        : '') +
+      output;
     main
       .querySelectorAll('[data-action="geolocate"]')
       .forEach((b) => (b.hidden = !enabled('geolocation')));
@@ -175,15 +182,11 @@ async function render() {
     main.dataset.view = state.view;
     hydrateSavedChats(main);
     arrangeCards();
-    if (output && !matchMedia('(prefers-reduced-motion: reduce)').matches)
-      main.animate(
-        [
-          { opacity: 0, transform: 'translateY(10px)' },
-          { opacity: 1, transform: 'translateY(0)' },
-        ],
-        { duration: 260, easing: 'ease-out' },
-      );
-    document.title = (nav.find((n) => n[0] === area)?.[1] || 'Publicação') + ' · Voz do Professor';
+    enhanceNavigation();
+    if (output) animateContent(main);
+    document.title =
+      (nav.find((n) => n[0] === area)?.[1] ||
+        (area === 'termos' ? 'Termos e Condições' : 'Publicação')) + ' · Voz do Professor';
     refreshIcons();
   } catch (e) {
     if (revision === version)
@@ -215,10 +218,12 @@ document.addEventListener('click', async (e) => {
       return;
     }
     if (action === 'menu-toggle') {
-      const nav = document.querySelector('#navigation');
-      nav.hidden = !nav.hidden;
-      el.setAttribute('aria-expanded', String(!nav.hidden));
-      el.setAttribute('aria-label', nav.hidden ? 'Expandir menu' : 'Recolher menu');
+      await toggleMenu(document.querySelector('#navigation'), el);
+      return;
+    }
+    if (action === 'back') {
+      location.hash =
+        routeTrail.length > 1 ? routeTrail.at(-2) : el.getAttribute('href') || '#/inicio';
       return;
     }
     if (action === 'theme') {
@@ -443,6 +448,10 @@ document.addEventListener('change', (e) => {
   if (e.target.name === 'state') form.elements.city.value = '';
 });
 window.addEventListener('hashchange', () => {
+  const current = location.hash || '#/inicio';
+  if (routeTrail.at(-2) === current) routeTrail.pop();
+  else if (routeTrail.at(-1) !== current) routeTrail.push(current);
+  if (routeTrail.length > 60) routeTrail.shift();
   document.querySelector('#dialog').close();
   window.scrollTo(0, 0);
   void render();

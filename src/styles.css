@@ -1683,3 +1683,74 @@ main[data-view='list'] .masonry > .card {
     margin-right: 8px;
   }
 }
+
+/* Arrows stay outside the scroll area so every pill remains reachable. */
+.nav-rail {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) 36px;
+  align-items: center;
+  gap: 8px;
+}
+.nav-rail > .navigation,
+.nav-rail > .tabs {
+  min-width: 0;
+  margin-inline: 0;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+.nav-rail > .tabs {
+  margin-bottom: 0;
+  padding-block: 8px;
+}
+.nav-rail:has(> .tabs) {
+  margin-bottom: 24px;
+}
+.nav-rail[data-overflow='false'] {
+  grid-template-columns: minmax(0, 1fr);
+}
+.nav-rail[data-overflow='false'] > .nav-arrow {
+  display: none;
+}
+.nav-rail .nav-link,
+.nav-rail .chip {
+  flex-shrink: 0;
+}
+.nav-arrow {
+  width: 36px;
+  height: 38px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+.nav-arrow:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.nav-arrow:not(:disabled):hover {
+  border-color: var(--red);
+  color: var(--red);
+}
+.page-back {
+  margin-bottom: 20px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .nav-link,
+  .chip,
+  .button,
+  .icon-button {
+    transition:
+      background 0.2s,
+      color 0.2s,
+      border-color 0.2s,
+      box-shadow 0.2s;
+  }
+  .nav-link:hover,
+  .chip:hover {
+    box-shadow: 0 3px 16px #00000012;
+  }
+}
+@media print {
+  .nav-rail,
+  .page-back {
+    display: none;
+  }
+}

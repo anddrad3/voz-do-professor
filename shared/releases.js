@@ -1,12 +1,26 @@
 // Friendly version labels assigned to the actual Git milestones; these are not Git tags.
-export const PLATFORM_VERSION = '3.2.0';
+export const PLATFORM_VERSION = '3.2.1';
 export const RELEASES = [
   {
     version: PLATFORM_VERSION,
     date: '2026-10-29',
-    title: 'Relatórios, leitura em cascata e personalização',
+    title: 'Navegação acessível e confirmação de ferramentas',
     status: 'Publicada',
     commits: [],
+    changes: [
+      'Setas laterais com rolagem suave no menu e nas pílulas, mantendo a opção ativa visível.',
+      'Botões Voltar nas páginas, com retorno interno à página anterior e alternativa para acessos diretos.',
+      'Confirmação antes de habilitar ou desabilitar ferramentas, individualmente ou em conjunto; cancelar preserva o estado.',
+      'Transições de páginas, cards e abertura do menu respeitam a preferência por movimento reduzido.',
+      'Logo como ícone da aba do painel de gestão privada.',
+    ],
+  },
+  {
+    version: '3.2.0',
+    date: '2026-10-29',
+    title: 'Relatórios, leitura em cascata e personalização',
+    status: 'Publicada',
+    commits: ['35ed60b', 'b000d72'],
     changes: [
       'Relatório estatístico em PDF gerado no navegador com período, estado e categoria selecionados, sem nova chamada à IA.',
       'Detalhes em cascata, animações com respeito a movimento reduzido, menu recolhível e logo centralizado.',
@@ -22,7 +36,7 @@ export const RELEASES = [
     date: '2026-10-28',
     title: 'Guia de uso da plataforma',
     status: 'Publicada',
-    commits: [],
+    commits: ['9ccbc56'],
     changes: [
       'Guia público de seis páginas em PDF, com links, instruções de todas as áreas e orientações de privacidade.',
       'Download na Minha Sala de Aula, em Transparência e no rodapé.',

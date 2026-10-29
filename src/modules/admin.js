@@ -10,11 +10,13 @@ import {
   toast,
   refreshIcons,
   dialog,
+  confirmAction,
   empty,
   external,
 } from '../ui.js';
 import { avatar, readAvatar } from './personalization.js';
-import { installMotion } from './motion.js';
+import { installMotion, animateContent } from './motion.js';
+import { enhanceNavigation } from './navigation.js';
 import { FEATURES, FEATURE_HELP } from '../../shared/features.js';
 let session = null,
   secondFactorRequired = false,
@@ -112,6 +114,9 @@ async function render() {
     `<div class="section-title"><div class="personal-greeting">${avatar(owner.avatar)}<strong>${h(owner.name)}</strong></div><button class="button" data-action="logout">Sair</button></div><nav class="tabs">${tabs.map(([key, label]) => `<button class="chip ${tab === key ? 'active' : ''}" data-action="tab" data-tab="${key}">${label}</button>`).join('')}</nav>` +
     body;
   refreshIcons();
+  enhanceNavigation(main);
+  refreshIcons();
+  animateContent(main);
 }
 document.addEventListener('click', async (e) => {
   const b = e.target.closest('[data-action]');
@@ -133,6 +138,15 @@ document.addEventListener('click', async (e) => {
     else if (action === 'edit') editing = b.dataset.id;
     else if (action === 'cancel') editing = null;
     else if (action === 'disable-all' || action === 'enable-all') {
+      const enable = action === 'enable-all';
+      if (
+        !(await confirmAction(
+          enable ? 'Habilitar todas as ferramentas?' : 'Desabilitar todas as ferramentas?',
+          `<p>${enable ? 'Todas as ferramentas voltarão a ficar disponíveis. Os limites financeiros da IA permanecem iguais.' : 'O site ficará sem conteúdo e ferramentas visíveis, mantendo o cabeçalho. Os registros continuam guardados para reativação.'}</p>`,
+          enable ? 'Sim, habilitar todas' : 'Sim, desabilitar todas',
+        ))
+      )
+        return;
       await request(
         '/settings',
         {
@@ -144,6 +158,13 @@ document.addEventListener('click', async (e) => {
       );
       toast('Ferramentas atualizadas.');
     } else if (action === 'ai-pause') {
+      if (
+        !(await confirmAction(
+          'Confirmar controle da IA',
+          `<p>${b.dataset.paused === 'true' ? 'Pausar as consultas com IA?' : 'Retomar as consultas com os limites de uso e orçamento atuais?'}</p>`,
+        ))
+      )
+        return;
       await request('/automation/pause', { paused: b.dataset.paused === 'true' });
       toast('Controle de consultas atualizado.');
     } else if (action === 'sync') {
@@ -174,13 +195,30 @@ document.addEventListener('click', async (e) => {
 });
 document.addEventListener('change', async (e) => {
   if (!e.target.dataset.feature) return;
+  const input = e.target,
+    key = input.dataset.feature,
+    desired = input.checked;
+  input.checked = !!config.features[key];
+  input.disabled = true;
   try {
-    const features = { ...config.features, [e.target.dataset.feature]: e.target.checked };
+    if (
+      !(await confirmAction(
+        `${desired ? 'Habilitar' : 'Desabilitar'} ferramenta?`,
+        `<h3>${h(FEATURES[key])}</h3><p>${h(FEATURE_HELP[key][1])}</p><p>A alteração será aplicada ao site somente após sua confirmação.</p>`,
+        desired ? 'Sim, habilitar' : 'Sim, desabilitar',
+      ))
+    )
+      return;
+    const latest = await request('/settings');
+    const features = { ...latest.features, [key]: desired };
     config = await request('/settings', { features }, 'PUT');
+    input.checked = !!config.features[key];
     toast('Ferramenta atualizada.');
   } catch (error) {
-    e.target.checked = !e.target.checked;
     toast(error.message);
+  } finally {
+    input.disabled = false;
+    input.focus();
   }
 });
 document.addEventListener('submit', async (e) => {

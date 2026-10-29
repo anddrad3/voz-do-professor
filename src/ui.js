@@ -250,6 +250,25 @@ export function csv(rows) {
       .join('\r\n')
   );
 }
+export function confirmAction(title, body, label = 'Confirmar') {
+  dialog(
+    title,
+    `${body}<div class="form-actions"><button class="button" data-action="close-dialog" autofocus>Cancelar</button><button class="button primary" data-confirm-action>${h(label)}</button></div>`,
+  );
+  const modal = document.querySelector('#dialog');
+  return new Promise((resolve) => {
+    let confirmed = false;
+    modal.addEventListener('close', () => resolve(confirmed), { once: true });
+    modal.querySelector('[data-confirm-action]').addEventListener(
+      'click',
+      () => {
+        confirmed = true;
+        modal.close();
+      },
+      { once: true },
+    );
+  });
+}
 export function dialog(title, body) {
   document.querySelector('#dialog-content').innerHTML =
     `<div class="dialog-head"><h2 id="dialog-title">${h(title)}</h2><button data-action="close-dialog" class="icon-button" aria-label="Fechar">${icon('x')}</button></div>${body}`;
