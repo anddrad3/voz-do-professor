@@ -14,7 +14,7 @@
     <div class="glow" aria-hidden="true"></div>
     <header class="header">
       <div class="header-inner">
-        <a class="brand" href="#/inicio" aria-label="Voz do Professor - página inicial"
+        <a class="brand" href="#/direitos" aria-label="Voz do Professor - página inicial"
           ><img src="%BASE_URL%logo.png" alt="Voz do Professor" width="180" height="100"
         /></a>
         <div class="header-actions">
@@ -27,7 +27,7 @@
             id="theme-toggle"
           >
             <i data-lucide="sun"></i></button
-          ><a class="account-link" href="#/perfil" id="account-link"
+          ><a class="account-link" href="#/perfil" id="account-link" aria-label="Minha Sala de Aula"
             ><i data-fa="chalkboard-user"></i><span>Minha Sala de Aula</span></a
           >
         </div>
@@ -35,24 +35,23 @@
     </header>
     <div class="shell">
       <div class="menu-control">
+        <nav class="navigation" aria-label="Navegação principal" id="navigation"></nav>
         <button
-          class="button small ghost"
+          class="button small ghost menu-toggle"
           data-action="menu-toggle"
           aria-label="Recolher menu"
           aria-controls="navigation"
           aria-expanded="true"
         >
-          <span aria-hidden="true">⌃</span> Menu
+          <span class="menu-chevron" aria-hidden="true">⌃</span><span class="menu-label">Menu</span>
         </button>
       </div>
-      <nav class="navigation" aria-label="Navegação principal" id="navigation"></nav>
       <div id="environment-note"></div>
       <main id="main" tabindex="-1"><div class="loading">Carregando sua plataforma…</div></main>
       <footer class="footer">
         <span
           >Voz do Professor <span class="dot">·</span> Autonomia e valorização docente · Matheus da
           Silva Andrade</span
-        ><a href="%BASE_URL%guias/guia-voz-do-professor.pdf" download>Guia de uso (PDF)</a
         ><a href="#/transparencia"
           >Fontes, metodologia e privacidade <i data-lucide="arrow-up-right"></i
         ></a>

@@ -1,3 +1,4 @@
+import { photoField, editedPhoto, installPhotoEditor } from './photo-editor.js';
 import '../styles.css';
 import {
   h,
@@ -14,7 +15,7 @@ import {
   empty,
   external,
 } from '../ui.js';
-import { avatar, readAvatar } from './personalization.js';
+import { avatar } from './personalization.js';
 import { installMotion, animateContent } from './motion.js';
 import { enhanceNavigation } from './navigation.js';
 import { FEATURES, FEATURE_HELP } from '../../shared/features.js';
@@ -80,10 +81,19 @@ async function render() {
   owner = await request('/profile');
   let body = '';
   if (tab === 'profile') {
-    body = `<article class="card reading"><h2>Perfil do proprietário</h2><p>O nome de exibição e a foto são guardados no servidor privado e acompanham seu acesso em outros dispositivos. Eles não alteram sua senha, o autenticador ou os créditos públicos do projeto.</p>${avatar(owner.avatar)}<form data-form="owner-profile" class="stack">${field('name', 'Nome de exibição', owner.name, 'text', 'required maxlength="60"')}${field('avatarFile', 'Foto (JPG, PNG ou WebP; até 5 MB)', '', 'file', 'accept="image/jpeg,image/png,image/webp"')}${check('removeAvatar', 'Remover foto', false)}<button class="button primary">Salvar perfil no servidor</button></form></article>`;
+    body = `<article class="card reading"><h2>Perfil do proprietário</h2><p>O nome de exibição e a foto são guardados no servidor privado e acompanham seu acesso em outros dispositivos. Eles não alteram sua senha, o autenticador ou os créditos públicos do projeto.</p><form data-form="owner-profile" class="stack">${field('name', 'Nome de exibição', owner.name, 'text', 'required maxlength="60"')}${photoField(owner.avatar)}${check('removeAvatar', 'Remover foto', false)}<button class="button primary">Salvar perfil no servidor</button></form></article>`;
   } else if (tab === 'changelog') {
     const release = await request('/changelog');
     body = `<article class="card accent-block"><div class="meta">Sua plataforma</div><h2>Versão ${h(release.version)}</h2><p>Esta é a versão do programa em execução. O modelo de IA e seu estado de ativação aparecem em Automação.</p><p>${release.commit ? external('https://github.com/anddrad3/voz-do-professor/commit/' + release.commit, 'Código desta publicação: ' + release.commit.slice(0, 7)) : 'Compilação local sem identificação de commit.'}</p></article><div class="stack">${release.history.map((v) => `<article class="card"><div class="meta">${h(v.date)} · ${h(v.status)}</div><h2>${h(v.version)} · ${h(v.title)}</h2><ul>${v.changes.map((c) => `<li>${h(c)}</li>`).join('')}</ul><div class="form-actions">${v.commits.map((c) => external('https://github.com/anddrad3/voz-do-professor/commit/' + c, 'Ver alteração ' + c)).join('')}</div></article>`).join('')}</div><p class="muted">Os nomes de versão organizam retrospectivamente os marcos reais do GitHub; não representam tags antigas do repositório.</p>`;
+    body += `<section class="card requirements-panel"><h2>Os ${release.requirements.length} requisitos do projeto original</h2><p>A matriz preserva o escopo inicial do PDF e explica as adaptações posteriores. Requisitos suspensos ou sem coleta online não são apresentados como funcionalidades completas.</p>${external('https://github.com/anddrad3/voz-do-professor/blob/main/docs/requisitos.md', 'Abrir a matriz original no GitHub')}<div class="stack">${release.requirements
+      .map(
+        (r) =>
+          `<details><summary><strong>${h(r.id)} · ${h(r.title)}</strong> <span class="tag">${h(r.status)}</span></summary><p>${h(r.current)}</p><p class="muted"><strong>Mapeamento original:</strong> ${h(r.implementation)}</p><p class="muted"><strong>Referência de verificação original:</strong> ${h(r.verification)}</p><div class="form-actions">${r.files
+            .split('; ')
+            .map((f) => external('https://github.com/anddrad3/voz-do-professor/blob/main/' + f, f))
+            .join('')}</div></details>`,
+      )
+      .join('')}</div></section>`;
   } else if (tab === 'features') {
     config = await request('/settings');
     body = `<article class="card"><h2>Ferramentas disponíveis no site</h2><p>Desativar todas deixa o conteúdo e as ferramentas vazios, mantendo somente o cabeçalho. Os dados públicos permanecem guardados para reativação.</p><div class="form-actions"><button class="button" data-action="disable-all">Desabilitar todas</button><button class="button primary" data-action="enable-all">Habilitar todas</button></div>${[
@@ -235,7 +245,7 @@ document.addEventListener('submit', async (e) => {
       session = data.user;
       csrf = data.csrf;
     } else if (form.dataset.form === 'owner-profile') {
-      const photo = await readAvatar(form.elements.avatarFile.files[0]);
+      const photo = editedPhoto(form);
       owner = await request(
         '/profile',
         { name: v.name, avatar: v.removeAvatar ? '' : photo || owner.avatar || '' },
@@ -284,6 +294,7 @@ document.addEventListener('submit', async (e) => {
     toast(error.message);
   }
 });
+installPhotoEditor();
 installMotion();
 request('/auth/session')
   .then((data) => {

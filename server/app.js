@@ -6,7 +6,7 @@ import { sessionMiddleware, csrf, limiter } from './security.js';
 import { records, unpack } from './db.js';
 import { filterRecords } from '../shared/filter.js';
 import { featureForKind } from '../shared/features.js';
-import { releaseInfo } from './modules/releases.js';
+import { publicReleaseInfo } from './modules/releases.js';
 import { settings } from './modules/settings.js';
 import { admin } from './modules/admin.js';
 import { adminAuth } from './modules/admin-auth.js';
@@ -16,6 +16,14 @@ import { statistics, defaultPeriod, periodSchema } from './modules/statistics.js
 function foundation() {
   const app = express();
   app.disable('x-powered-by');
+  app.use((req, res, next) => {
+    res.set(
+      'Permissions-Policy',
+      'camera=(), microphone=(), geolocation=(self), payment=(), usb=()',
+    );
+    res.set('Referrer-Policy', 'no-referrer');
+    next();
+  });
   const prefix = (process.env.BASE_PATH || '').replace(/\/$/, '');
   if (prefix)
     app.use((req, res, next) => {
@@ -25,6 +33,7 @@ function foundation() {
     });
   app.use(
     helmet({
+      referrerPolicy: { policy: 'no-referrer' },
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
@@ -61,9 +70,14 @@ function errors(app) {
         .status(400)
         .json({ error: error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ') });
     const status = error.status || 500;
-    res
-      .status(status)
-      .json({ error: status >= 500 ? 'Não foi possível concluir a operação.' : error.message });
+    res.status(status).json({
+      error:
+        status >= 500
+          ? 'Não foi possível concluir a operação.'
+          : status === 404
+            ? 'Recurso não encontrado.'
+            : error.message,
+    });
   });
   return app;
 }
@@ -109,7 +123,7 @@ export function createApp(db, { staticDir = resolve('dist'), automation, gemini 
     ) &&
     !(r.kind === 'content' && r.type === 'Piso salarial');
   app.get('/api/versions', (req, res) =>
-    settings(db).features.versions ? res.json(releaseInfo()) : res.sendStatus(404),
+    settings(db).features.versions ? res.json(publicReleaseInfo()) : res.sendStatus(404),
   );
   app.get('/api/health', (req, res) => res.json({ ok: true }));
   app.get('/api/statistics', (req, res) => {
@@ -201,8 +215,27 @@ export function createApp(db, { staticDir = resolve('dist'), automation, gemini 
       return res.sendStatus(404);
     next();
   });
-  app.use(express.static(staticDir, { index: false }));
-  app.get('/{*path}', (req, res) => res.sendFile(resolve(staticDir, 'index.html')));
+  // Only deliberately published assets can be served, even if a private file is
+  // accidentally copied into the build directory. Do not turn file probes into SPA pages.
+  app.use((req, res, next) => {
+    const safe =
+      /^\/assets\/[A-Za-z0-9_-][A-Za-z0-9_.-]*\.(?:js|css|woff2?)$/.test(req.path) ||
+      [
+        '/logo.png',
+        '/data/municipios.json',
+        '/data/LICENSE-municipios.txt',
+        '/formularios/voz-do-professor.pdf',
+        '/guias/guia-voz-do-professor.pdf',
+      ].includes(req.path);
+    if (safe)
+      return express.static(staticDir, { index: false, dotfiles: 'deny', fallthrough: false })(
+        req,
+        res,
+        next,
+      );
+    if (req.path !== '/') return res.sendStatus(404);
+    res.set('Cache-Control', 'no-cache').sendFile(resolve(staticDir, 'index.html'));
+  });
   return errors(app);
 }
 export function createAdminApp(db, { staticDir = resolve('dist'), automation } = {}) {
@@ -232,7 +265,15 @@ export function createAdminApp(db, { staticDir = resolve('dist'), automation } =
   app.use('/api/admin/auth', adminAuth(db));
   app.use('/api/admin', admin(db, { automation }));
   app.use('/api', (req, res) => res.sendStatus(404));
-  app.use('/assets', express.static(resolve(staticDir, 'assets')));
+  app.use(
+    '/assets',
+    (req, res, next) => {
+      if (!/^\/[A-Za-z0-9_-][A-Za-z0-9_.-]*\.(?:js|css|woff2?)$/.test(req.path))
+        return res.sendStatus(404);
+      next();
+    },
+    express.static(resolve(staticDir, 'assets'), { dotfiles: 'deny' }),
+  );
   app.get('/logo.png', (req, res) => res.sendFile(resolve(staticDir, 'logo.png')));
   app.get('/', (req, res) => res.sendFile(resolve(staticDir, 'admin.html')));
   app.get(['/painel', '/painel/'], (req, res) => res.sendFile(resolve(staticDir, 'admin.html')));

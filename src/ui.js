@@ -46,6 +46,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ArrowLeft,
+  ArrowRight,
   CalendarPlus,
   MessageSquarePlus,
   ChartNoAxesCombined,
@@ -89,6 +90,7 @@ const icons = {
   ChevronLeft,
   ChevronRight,
   ArrowLeft,
+  ArrowRight,
   CalendarPlus,
   MessageSquarePlus,
   ChartNoAxesCombined,
@@ -270,6 +272,7 @@ export function confirmAction(title, body, label = 'Confirmar') {
   });
 }
 export function dialog(title, body) {
+  document.querySelector('#dialog').classList.remove('search-dialog');
   document.querySelector('#dialog-content').innerHTML =
     `<div class="dialog-head"><h2 id="dialog-title">${h(title)}</h2><button data-action="close-dialog" class="icon-button" aria-label="Fechar">${icon('x')}</button></div>${body}`;
   document.querySelector('#dialog').showModal();

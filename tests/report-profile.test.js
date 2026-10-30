@@ -91,7 +91,8 @@ test('consulta exige três confirmações e personalização escapa texto sem en
   state.profile = { name: '<script>teste</script>', state: 'SP' };
   const html = assistantPanel('jobs');
   assert.equal((html.match(/type="checkbox"[^>]*required/g) || []).length, 3);
-  assert.match(html, /#\/termos/);
+  assert.ok(!html.includes('#/termos'));
+  assert.match(html, /assistant-filter/);
   assert.ok(!html.includes('<script>'));
   assert.match(greeting(), /&lt;script&gt;/);
   state.profile = {};

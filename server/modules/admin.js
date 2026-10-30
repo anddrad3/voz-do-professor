@@ -6,13 +6,13 @@ import { saveRecord, publishRecord, audit, qualityReport } from '../domain.js';
 import { settings, setFeatures } from './settings.js';
 import { FEATURES } from '../../shared/features.js';
 import { ownerProfile, saveOwnerProfile } from './owner-profile.js';
-import { releaseInfo } from './releases.js';
+import { adminReleaseInfo } from './releases.js';
 export function admin(db, { automation } = {}) {
   const r = Router();
   r.use(requireAdmin);
   r.get('/profile', (req, res) => res.json(ownerProfile(db, req.user)));
   r.put('/profile', (req, res) => res.json(saveOwnerProfile(db, req.user, req.body)));
-  r.get('/changelog', (req, res) => res.json(releaseInfo()));
+  r.get('/changelog', (req, res) => res.json(adminReleaseInfo()));
   r.delete('/stories/:id', (req, res) => {
     z.object({ confirmation: z.literal('EXCLUIR') })
       .strict()

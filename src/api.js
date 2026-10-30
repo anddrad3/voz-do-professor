@@ -70,7 +70,9 @@ export function clearLocal() {
   try {
     localStorage.removeItem(KEY);
     localStorage.removeItem('voz-theme');
+    localStorage.removeItem('voz-terms-accepted');
   } catch {}
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event('voz-local-cleared'));
 }
 export const enabled = (k) => state.config.features?.[k] === true;
 export async function api(path) {

@@ -25,9 +25,10 @@ export function termsPage() {
       'Termos e Condições',
       'Versão ' + TERMS_VERSION + ' · Leia antes de enviar uma consulta com IA.',
     ) +
-    '<div class="reading stack">' +
+    '<div class="publication-thread">' +
     TERMS.map(
-      ([title, body]) => `<article class="card"><h2>${h(title)}</h2><p>${h(body)}</p></article>`,
+      ([title, body], index) =>
+        `<article class="card ${index ? 'thread-reply' : ''}"><h2>${h(title)}</h2><p>${h(body)}</p></article>`,
     ).join('') +
     '</div>'
   );

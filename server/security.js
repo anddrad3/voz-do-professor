@@ -61,15 +61,28 @@ export function clientAddress(req) {
 export function limiter(limit = 30, windowMs = 60000) {
   const entries = new Map();
   const salt = token();
+  let nextCleanup = 0;
   return (req, res, next) => {
     const at = Date.now();
-    for (const [k, v] of entries) if (v.until < at) entries.delete(k);
+    if (at >= nextCleanup) {
+      for (const [k, v] of entries) if (v.until < at) entries.delete(k);
+      nextCleanup = at + Math.min(10000, windowMs);
+    }
     const key = hash(salt + clientAddress(req));
-    const e = entries.get(key) || { n: 0, until: at + windowMs };
+    if (!entries.has(key) && entries.size >= 4096)
+      return res
+        .set('Retry-After', '60')
+        .status(429)
+        .json({ error: 'Serviço ocupado. Tente novamente em um minuto.' });
+    const saved = entries.get(key);
+    const e = saved && saved.until > at ? saved : { n: 0, until: at + windowMs };
     e.n++;
     entries.set(key, e);
     if (e.n > limit)
-      return res.status(429).json({ error: 'Muitas tentativas. Aguarde um minuto.' });
+      return res
+        .set('Retry-After', String(Math.max(1, Math.ceil((e.until - at) / 1000))))
+        .status(429)
+        .json({ error: 'Muitas tentativas. Aguarde um minuto.' });
     next();
   };
 }

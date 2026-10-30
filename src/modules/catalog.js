@@ -198,7 +198,7 @@ export async function catalog(kind) {
       : '',
   );
   if (kind === 'content')
-    out += `<div class="toolbar"><button class="chip ${!state.filters.content?.type ? 'active' : ''}" data-action="content-category" data-value="">Recentes</button>${TYPES.map((t) => `<button class="chip ${state.filters.content?.type === t ? 'active' : ''}" data-action="content-category" data-value="${h(t)}">${h(t)}</button>`).join('')}</div>`;
+    out += `<div class="tabs"><button class="chip ${!state.filters.content?.type ? 'active' : ''}" data-action="content-category" data-value="">Recentes</button>${TYPES.map((t) => `<button class="chip ${state.filters.content?.type === t ? 'active' : ''}" data-action="content-category" data-value="${h(t)}">${h(t)}</button>`).join('')}</div>`;
   if (kind === 'content' || kind === 'contests') {
     const type = state.filters.content?.type;
     const topic =

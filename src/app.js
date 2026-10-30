@@ -1,3 +1,5 @@
+import { installTermsGate } from './modules/terms-gate.js';
+import { installPhotoEditor } from './modules/photo-editor.js';
 import { versionsPage } from './modules/versions.js';
 import { termsPage } from './modules/transparency.js';
 import { greeting } from './modules/personalization.js';
@@ -17,12 +19,14 @@ import {
   toggleFavorite,
 } from './api.js';
 import { h, icon, refreshIcons, toast, dialog, field, empty, fmtDate, arrangeCards } from './ui.js';
-import { home, catalog, detail, radar, exportCalendar, globalSearch } from './modules/catalog.js';
+import { catalog, detail, radar, exportCalendar, globalSearch } from './modules/catalog.js';
 import { voice, survey, story, withdrawal } from './modules/voice.js';
 import { profile, notifications, submitProfile } from './modules/profile.js';
 import { transparency } from './modules/transparency.js';
 import { jobsPage, submitAssistant, chatAction, hydrateSavedChats } from './modules/assistant.js';
 import { statisticsPage, setStatisticsPeriod, exportStatistics } from './modules/statistics.js';
+if (!location.hash || /^#\/?inicio$/.test(location.hash))
+  history.replaceState(null, '', '#/direitos');
 const nav = [
   ['inicio', 'Início', 'house', null],
   ['direitos', 'Direitos e Notícias', 'newspaper', 'content'],
@@ -32,12 +36,12 @@ const nav = [
   ['voz', 'Voz do Professor', 'messages-square', 'voice'],
   ['estatisticas', 'Estatísticas', 'chart-pie', 'statistics'],
   ['perfil', 'Minha Sala de Aula', 'chalkboard-user', 'preferences'],
-  ['versoes', 'Versões e mudanças', 'clock', 'versions'],
+  ['versoes', 'Estatísticas para Nerds', 'clock', 'versions'],
   ['transparencia', 'Transparência', 'shield-check', null],
 ];
 let version = 0,
   speechId = null;
-const routeTrail = [location.hash || '#/inicio'];
+const routeTrail = [location.hash || '#/direitos'];
 function theme(value) {
   document.documentElement.dataset.theme = value;
   const b = document.querySelector('#theme-toggle');
@@ -54,12 +58,13 @@ try {
   theme('dark');
 }
 const route = () => {
-  const [area = 'inicio', raw = ''] = location.hash.replace(/^#\/?/, '').split('/');
+  const [requested = 'direitos', raw = ''] = location.hash.replace(/^#\/?/, '').split('/');
+  const area = requested === 'inicio' ? 'direitos' : requested;
   let id = '';
   try {
     id = decodeURIComponent(raw);
   } catch {}
-  return { area: area || 'inicio', id };
+  return { area: area || 'direitos', id };
 };
 async function render() {
   const revision = ++version;
@@ -75,6 +80,7 @@ async function render() {
   const navigation = document.querySelector('#navigation');
   navigation.innerHTML = any
     ? nav
+        .filter((n) => !['inicio', 'perfil', 'versoes'].includes(n[0]))
         .filter(
           (n) =>
             !n[3] ||
@@ -91,12 +97,12 @@ async function render() {
   document.querySelector('#account-link').hidden =
     !enabled('preferences') && !enabled('favorites') && !enabled('alerts');
   document.querySelector('#theme-toggle').hidden = !enabled('theme');
+  document.querySelector('.menu-control').hidden = !any;
   document.querySelector('[data-action="menu-toggle"]').hidden = !any || !enabled('navigation');
   if (!enabled('navigation')) {
     navigation.hidden = false;
     document.querySelector('[data-action="menu-toggle"]').setAttribute('aria-expanded', 'true');
   }
-  document.querySelector('.footer a[download]').hidden = !enabled('guide');
   if (!enabled('viewModes')) state.view = 'grid';
   document.querySelector('.footer').hidden = !any;
   document.querySelector('#environment-note').innerHTML =
@@ -117,9 +123,6 @@ async function render() {
       output = empty('Área indisponível', 'Esta ferramenta está desativada no momento.');
     else
       switch (area) {
-        case 'inicio':
-          output = await home();
-          break;
         case 'busca':
           output = await globalSearch(id);
           break;
@@ -165,8 +168,8 @@ async function render() {
       }
     if (revision !== version) return;
     main.innerHTML =
-      (any && area !== 'inicio' && !output.includes('data-action="back"')
-        ? `<a href="#/inicio" class="button ghost small page-back" data-action="back">${icon('arrow-left')}Voltar</a>`
+      (any && area !== 'direitos' && !output.includes('data-action="back"')
+        ? `<a href="#/direitos" class="button ghost small page-back" data-action="back">${icon('arrow-left')}Voltar</a>`
         : '') +
       (any && ['inicio', 'direitos', 'radar', 'concursos'].includes(area)
         ? greeting('Explore as informações e ajuste os filtros à sua região.')
@@ -223,7 +226,7 @@ document.addEventListener('click', async (e) => {
     }
     if (action === 'back') {
       location.hash =
-        routeTrail.length > 1 ? routeTrail.at(-2) : el.getAttribute('href') || '#/inicio';
+        routeTrail.length > 1 ? routeTrail.at(-2) : el.getAttribute('href') || '#/direitos';
       return;
     }
     if (action === 'theme') {
@@ -245,8 +248,9 @@ document.addEventListener('click', async (e) => {
       if (!enabled('search')) return;
       dialog(
         'Buscar na plataforma',
-        `<form data-form="global-search" class="stack">${field('q', 'Palavra-chave', '', 'search', 'required autofocus')}<label class="ai-consent"><input type="checkbox" required> Li e aceito os <a href="#/termos" target="_blank" rel="noopener">Termos e Condições</a>.</label><button class="button primary">Pesquisar</button></form>`,
+        `<form data-form="global-search" class="search-form"><label class="sr-only" for="site-search">Palavra-chave</label><div class="search-input-wrap">${icon('search')}<input id="site-search" name="q" type="search" placeholder="Notícias, direitos, oportunidades…" required autofocus maxlength="120" autocomplete="off"><button class="icon-button" aria-label="Pesquisar">${icon('arrow-right')}</button></div><p class="muted small-text">Pesquise no catálogo. Você também poderá consultar a IA na página de resultados.</p></form>`,
       );
+      document.querySelector('#dialog').classList.add('search-dialog');
       return;
     }
     if (action === 'favorite') {
@@ -438,6 +442,16 @@ document.addEventListener('submit', async (e) => {
   }
 });
 // Clearing the country resets state/city, preventing invisible conflicting filters.
+document.addEventListener(
+  'toggle',
+  (e) => {
+    if (!e.target.matches('.assistant-filter')) return;
+    state.expandedFilters ||= new Set();
+    if (e.target.open) state.expandedFilters.add(e.target.dataset.filterTopic);
+    else state.expandedFilters.delete(e.target.dataset.filterTopic);
+  },
+  true,
+);
 document.addEventListener('change', (e) => {
   const form = e.target.closest('form[data-form="filter"], form[data-form="assistant"]');
   if (!form) return;
@@ -448,7 +462,7 @@ document.addEventListener('change', (e) => {
   if (e.target.name === 'state') form.elements.city.value = '';
 });
 window.addEventListener('hashchange', () => {
-  const current = location.hash || '#/inicio';
+  const current = location.hash || '#/direitos';
   if (routeTrail.at(-2) === current) routeTrail.pop();
   else if (routeTrail.at(-1) !== current) routeTrail.push(current);
   if (routeTrail.length > 60) routeTrail.shift();
@@ -460,6 +474,8 @@ window.addEventListener('pagehide', () => window.speechSynthesis?.cancel());
 window.addEventListener('storage', (e) => {
   if (e.key === 'voz-local-v2') location.reload();
 });
+installTermsGate();
+installPhotoEditor();
 installMotion();
 void render().catch((e) => {
   document.querySelector('#main').innerHTML = empty('Servidor indisponível', e.message);

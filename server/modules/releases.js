@@ -1,5 +1,20 @@
 import { readFileSync } from 'node:fs';
 import { PLATFORM_VERSION, RELEASES } from '../../shared/releases.js';
+import { requirementInfo } from './requirements.js';
+export function publicReleaseInfo() {
+  return {
+    version: PLATFORM_VERSION,
+    history: RELEASES.map(({ version, date, title, changes }) => ({
+      version,
+      date,
+      title,
+      summary: changes[0] || title,
+    })),
+  };
+}
+export function adminReleaseInfo() {
+  return { ...releaseInfo(), requirements: requirementInfo() };
+}
 export function releaseInfo() {
   let build = {};
   try {

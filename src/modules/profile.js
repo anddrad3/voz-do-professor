@@ -1,4 +1,5 @@
-import { greeting, avatar, readAvatar } from './personalization.js';
+import { photoField, editedPhoto } from './photo-editor.js';
+import { greeting } from './personalization.js';
 import { state, loadRecords, localAlerts, saveLocal, enabled } from '../api.js';
 import { savedChats } from './assistant.js';
 import {
@@ -33,16 +34,13 @@ export async function profile() {
       'Somente neste navegador',
       'Minha Sala de Aula',
       'Sua região, publicações favoritas, vagas salvas, consultas e novidades em um só lugar.',
-      enabled('guide')
-        ? `<a class="button" href="${import.meta.env?.BASE_URL || '/'}guias/guia-voz-do-professor.pdf" download>${icon('download')}Como usar o site · Guia em PDF</a>`
-        : '',
     ) +
     greeting('Este é seu espaço para guardar publicações, consultas e preferências.') +
     notice(
       'Preferências, favoritos e alertas ficam no armazenamento local deste navegador. Limpar os dados do navegador apaga essas informações. Quem usa este mesmo navegador pode vê-las.',
     ) +
     (enabled('preferences')
-      ? `<article class="card"><h2>Meu perfil, região e interesses</h2><p class="muted">Nome e foto são opcionais, ficam somente neste navegador e não são enviados à IA.</p><form data-form="local-profile">${avatar(p.avatar)}<div class="form-grid">${field('name', 'Como quer ser chamado', p.name || '', 'text', 'maxlength="60"')}${field('avatarFile', 'Foto local (JPG, PNG ou WebP; até 5 MB)', '', 'file', 'accept="image/jpeg,image/png,image/webp"')}${check('removeAvatar', 'Remover minha foto local', false)}${field('country', 'País (código de duas letras)', p.country || 'BR', 'text', 'maxlength="2"')}${select('state', 'Estado', states, p.state)}${field('city', 'Cidade', p.city || '')}${field('discipline', 'Disciplina ou área', p.discipline || '')}</div><div class="form-actions"><button type="button" class="button" data-action="geolocate">${icon('locate-fixed')}Usar localização com minha permissão</button></div><div class="stack">${check('news', 'Notícias', state.preferences.news)}${check('legislation', 'Direitos e legislação', state.preferences.legislation)}${check('opportunities', 'Oportunidades', state.preferences.opportunities)}</div><div class="form-actions"><button class="button primary">Salvar neste navegador</button><button type="button" class="button" data-action="clear-local">Apagar meus dados locais</button></div></form></article>`
+      ? `<article class="card"><h2>Meu perfil, região e interesses</h2><p class="muted">Nome e foto são opcionais, ficam somente neste navegador e não são enviados à IA.</p><form data-form="local-profile"><div class="form-grid">${field('name', 'Como quer ser chamado', p.name || '', 'text', 'maxlength="60"')}${photoField(p.avatar)}${check('removeAvatar', 'Remover minha foto local', false)}${field('country', 'País (código de duas letras)', p.country || 'BR', 'text', 'maxlength="2"')}${select('state', 'Estado', states, p.state)}${field('city', 'Cidade', p.city || '')}${field('discipline', 'Disciplina ou área', p.discipline || '')}</div><div class="form-actions"><button type="button" class="button" data-action="geolocate">${icon('locate-fixed')}Usar localização com minha permissão</button></div><div class="stack">${check('news', 'Notícias', state.preferences.news)}${check('legislation', 'Direitos e legislação', state.preferences.legislation)}${check('opportunities', 'Oportunidades', state.preferences.opportunities)}</div><div class="form-actions"><button class="button primary">Salvar neste navegador</button><button type="button" class="button" data-action="clear-local">Apagar meus dados locais</button></div></form></article>`
       : '') +
     (enabled('favorites')
       ? `<div class="section-title"><h2>Publicações que você salvou</h2></div>${viewControls(state)}<div class="masonry">${favorites.length ? favorites.map((r) => card(r, state)).join('') : empty('Nenhum favorito salvo', 'Use o marcador nos cards para guardar publicações neste navegador.')}</div>`
@@ -64,7 +62,7 @@ function alertsMarkup(alerts) {
 export const notifications = profile;
 export async function submitProfile(type, form, v) {
   if (type !== 'local-profile') return false;
-  const photo = await readAvatar(form.elements.avatarFile.files[0]);
+  const photo = editedPhoto(form);
   state.profile = {
     name: String(v.name || '')
       .trim()

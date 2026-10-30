@@ -4,6 +4,10 @@ Site publicado: [Voz do Professor](https://amerindia.alwaysdata.net/voz-do-profe
 
 Plataforma de informação docente com cards adaptativos, temas claro/escuro, catálogo público e administração privada. Versão 3: **sem contas de visitantes, sem upload e sem coleta de relatos ou respostas no servidor**.
 
+## Versão 3.3
+
+Menu compacto com rolagem circular e cabeçalho menor, preservando a logo. Entrada em Direitos e Notícias, aceite local dos termos no primeiro clique e filtros de IA recolhíveis. Minha Sala de Aula fica no cabeçalho; guia, termos e o histórico resumido ficam em Transparência. O editor de foto permite arrastar, ampliar e recortar. O painel privado inclui os 66 requisitos originais e explica mudanças de escopo. Fotos de relatos são anexadas por e-mail, conforme o PDF. Veja [segurança e limites](docs/seguranca.md).
+
 ## Versão 3.2
 
 Relatórios estatísticos em PDF respeitam período, estado e categoria, sem nova consulta à IA. A leitura interna usa cards em cascata; menu, tema e demais ferramentas têm controles agrupados no painel. Visitantes personalizam nome/foto somente no navegador; o perfil do proprietário permanece privado no servidor. Termos e histórico de versões ficam disponíveis no site. As três confirmações são obrigatórias para consultar a IA; a mudança na contribuição estatística em 29/10/2026 está documentada nos gráficos e no guia.

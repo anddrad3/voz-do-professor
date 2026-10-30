@@ -1,12 +1,32 @@
 // Friendly version labels assigned to the actual Git milestones; these are not Git tags.
-export const PLATFORM_VERSION = '3.2.1';
+export const PLATFORM_VERSION = '3.3.0';
 export const RELEASES = [
   {
     version: PLATFORM_VERSION,
+    date: '2026-10-30',
+    title: 'Acesso simplificado, fotos e transparência por perfil',
+    status: 'Publicada',
+    commits: [],
+    changes: [
+      'Entrada direta em Direitos e Notícias; Minha Sala de Aula somente no cabeçalho, guia e histórico somente em Transparência.',
+      'Aceite de termos no primeiro clique, em diálogo de rodapé, salvo só no navegador; termos apresentados em cascata e removidos da busca.',
+      'Filtro personalizado com IA recolhível e busca minimalista; confirmações específicas de IA continuam obrigatórias.',
+      'Estatísticas para Nerds apresenta somente resumo público de versões, sem hashes, links do GitHub ou matriz detalhada.',
+      'Histórico privado mantém mudanças completas, links dos commits e os 66 requisitos originais com situação atual, adaptações e limites.',
+      'Editor local de foto com seleção, arrastar e soltar, ampliação, posicionamento e recorte; visitante salva localmente, proprietário salva o JPEG reduzido no servidor.',
+      'PDF de relato orienta anexar fotos ao mesmo e-mail e informar autorização. Formulário permanece preenchível, sem upload no site.',
+      'Servidor serve apenas arquivos públicos permitidos; bloqueia arquivos privados e mapas de código, limita memória do controle de abuso e tempo de recebimento de requisições.',
+      'Políticas de permissões e referência reforçadas. Autenticação com segundo fator, CSRF, orçamento da IA e ausência de cadastro público preservados.',
+      'Menu ocupa uma única faixa: botão Menu ao recolher, pílulas e seta discreta ao abrir. Rolagem circular nas pílulas com continuidade nas duas direções; cabeçalho menor preserva o tamanho da logo.',
+      'Guia de uso revisado. Não há promessa de invulnerabilidade nem de impossibilidade de copiar conteúdo público.',
+    ],
+  },
+  {
+    version: '3.2.1',
     date: '2026-10-29',
     title: 'Navegação acessível e confirmação de ferramentas',
     status: 'Publicada',
-    commits: [],
+    commits: ['a5e9e51'],
     changes: [
       'Setas laterais com rolagem suave no menu e nas pílulas, mantendo a opção ativa visível.',
       'Botões Voltar nas páginas, com retorno interno à página anterior e alternativa para acessos diretos.',

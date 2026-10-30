@@ -56,6 +56,12 @@ if (adminServer) {
     adminSocket ? 'Gestão privada: socket local protegido.' : 'Gestão privada: somente loopback.',
   );
 }
+for (const httpServer of [server, adminServer].filter(Boolean)) {
+  httpServer.headersTimeout = 15000;
+  httpServer.requestTimeout = 30000;
+  httpServer.keepAliveTimeout = 5000;
+  httpServer.maxRequestsPerSocket = 1000;
+}
 if (process.env.AUTO_SYNC !== 'false') automation.start();
 const stopAdminBridge = await startAdminBridge({
   directory: adminServer ? process.env.ADMIN_BRIDGE_DIR : undefined,
