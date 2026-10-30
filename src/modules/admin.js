@@ -16,7 +16,7 @@ import {
   external,
 } from '../ui.js';
 import { avatar } from './personalization.js';
-import { installMotion, animateContent } from './motion.js';
+import { installMotion, animateContent, leaveContent } from './motion.js';
 import { enhanceNavigation } from './navigation.js';
 import { FEATURES, FEATURE_HELP } from '../../shared/features.js';
 let session = null,
@@ -84,7 +84,7 @@ async function render() {
     body = `<article class="card reading"><h2>Perfil do proprietário</h2><p>O nome de exibição e a foto são guardados no servidor privado e acompanham seu acesso em outros dispositivos. Eles não alteram sua senha, o autenticador ou os créditos públicos do projeto.</p><form data-form="owner-profile" class="stack">${field('name', 'Nome de exibição', owner.name, 'text', 'required maxlength="60"')}${photoField(owner.avatar)}${check('removeAvatar', 'Remover foto', false)}<button class="button primary">Salvar perfil no servidor</button></form></article>`;
   } else if (tab === 'changelog') {
     const release = await request('/changelog');
-    body = `<article class="card accent-block"><div class="meta">Sua plataforma</div><h2>Versão ${h(release.version)}</h2><p>Esta é a versão do programa em execução. O modelo de IA e seu estado de ativação aparecem em Automação.</p><p>${release.commit ? external('https://github.com/anddrad3/voz-do-professor/commit/' + release.commit, 'Código desta publicação: ' + release.commit.slice(0, 7)) : 'Compilação local sem identificação de commit.'}</p></article><div class="stack">${release.history.map((v) => `<article class="card"><div class="meta">${h(v.date)} · ${h(v.status)}</div><h2>${h(v.version)} · ${h(v.title)}</h2><ul>${v.changes.map((c) => `<li>${h(c)}</li>`).join('')}</ul><div class="form-actions">${v.commits.map((c) => external('https://github.com/anddrad3/voz-do-professor/commit/' + c, 'Ver alteração ' + c)).join('')}</div></article>`).join('')}</div><p class="muted">Os nomes de versão organizam retrospectivamente os marcos reais do GitHub; não representam tags antigas do repositório.</p>`;
+    body = `<div class="publication-thread admin-release-thread"><article class="card accent-block"><div class="meta">Sua plataforma</div><h2>Versão ${h(release.version)}</h2><p>Esta é a versão do programa em execução. O modelo de IA e seu estado de ativação aparecem em Automação.</p><p>${release.commit ? external('https://github.com/anddrad3/voz-do-professor/commit/' + release.commit, 'Código desta publicação: ' + release.commit.slice(0, 7)) : 'Compilação local sem identificação de commit.'}</p></article>${release.history.map((v) => `<article class="card thread-reply"><div class="meta">${h(v.date)} · ${h(v.status)}</div><h2>${h(v.version)} · ${h(v.title)}</h2><ul>${v.changes.map((c) => `<li>${h(c)}</li>`).join('')}</ul><div class="form-actions">${v.commits.map((c) => external('https://github.com/anddrad3/voz-do-professor/commit/' + c, 'Ver alteração ' + c)).join('')}</div></article>`).join('')}</div><p class="muted">Os nomes de versão organizam retrospectivamente os marcos reais do GitHub; não representam tags antigas do repositório.</p>`;
     body += `<section class="card requirements-panel"><h2>Os ${release.requirements.length} requisitos do projeto original</h2><p>A matriz preserva o escopo inicial do PDF e explica as adaptações posteriores. Requisitos suspensos ou sem coleta online não são apresentados como funcionalidades completas.</p>${external('https://github.com/anddrad3/voz-do-professor/blob/main/docs/requisitos.md', 'Abrir a matriz original no GitHub')}<div class="stack">${release.requirements
       .map(
         (r) =>
@@ -120,6 +120,7 @@ async function render() {
     else
       body = `<div class="section-title"><h2>${h(tabs.find((t) => t[0] === tab)[1])}</h2>${tab === 'story' ? '<button class="button primary" data-action="new">Adicionar relato</button>' : ''}</div><div class="stack">${items.map((r) => `<article class="card"><div class="meta">${h(r.status)} · ${r.automatic ? 'Automático' : h(r.author || 'Anônimo / curadoria')}</div><h3>${h(r.title)}</h3><p>${h((r.body || '').slice(0, 300))}</p><div class="form-actions"><button class="button small" data-action="edit" data-id="${h(r.id)}">Editar</button>${r.status !== 'published' ? `<button class="button small primary" data-action="publish" data-id="${h(r.id)}">Revisar e publicar</button>` : `<button class="button small" data-action="archive" data-id="${h(r.id)}">Retirar do site</button>`}${tab === 'story' ? `<button class="button small danger" data-action="delete-story" data-id="${h(r.id)}">Excluir relato</button>` : ''}</div></article>`).join('') || empty('Nenhum registro nesta área')}</div>`;
   }
+  await leaveContent(main);
   main.innerHTML =
     `<div class="section-title"><div class="personal-greeting">${avatar(owner.avatar)}<strong>${h(owner.name)}</strong></div><button class="button" data-action="logout">Sair</button></div><nav class="tabs">${tabs.map(([key, label]) => `<button class="chip ${tab === key ? 'active' : ''}" data-action="tab" data-tab="${key}">${label}</button>`).join('')}</nav>` +
     body;

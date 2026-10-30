@@ -35,7 +35,6 @@
     </header>
     <div class="shell">
       <div class="menu-control">
-        <nav class="navigation" aria-label="Navegação principal" id="navigation"></nav>
         <button
           class="button small ghost menu-toggle"
           data-action="menu-toggle"
@@ -43,8 +42,22 @@
           aria-controls="navigation"
           aria-expanded="true"
         >
-          <span class="menu-chevron" aria-hidden="true">⌃</span><span class="menu-label">Menu</span>
+          <svg
+            class="menu-chevron"
+            aria-hidden="true"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="m6 14 6-6 6 6" /></svg
+          ><span class="menu-label">Menu</span>
         </button>
+        <nav class="navigation" aria-label="Navegação principal" id="navigation"></nav>
       </div>
       <div id="environment-note"></div>
       <main id="main" tabindex="-1"><div class="loading">Carregando sua plataforma…</div></main>

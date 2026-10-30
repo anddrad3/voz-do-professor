@@ -1,12 +1,25 @@
 // Friendly version labels assigned to the actual Git milestones; these are not Git tags.
-export const PLATFORM_VERSION = '3.3.0';
+export const PLATFORM_VERSION = '3.3.1';
 export const RELEASES = [
   {
     version: PLATFORM_VERSION,
     date: '2026-10-30',
-    title: 'Acesso simplificado, fotos e transparência por perfil',
     status: 'Publicada',
     commits: [],
+    title: 'Menu estável, histórico em cascata e transições',
+    changes: [
+      'Menu compacto permanece no mesmo lugar ao abrir e recolher, com seta vetorial alinhada ao texto; histórico resumido acessível como Estatísticas para Nerds em Transparência.',
+      'Versões completas do painel organizadas em cascata, preservando links dos commits e os 66 requisitos.',
+      'Transições de saída e entrada nas páginas, categorias e no retorno; ampliação suave em cards, pílulas, botões e controles ao passar o mouse.',
+      'Animações respeitam a preferência do dispositivo por movimento reduzido. Controles financeiros, fontes e autenticação não foram alterados.',
+    ],
+  },
+  {
+    version: '3.3.0',
+    date: '2026-10-30',
+    title: 'Acesso simplificado, fotos e transparência por perfil',
+    status: 'Publicada',
+    commits: ['d3226ff'],
     changes: [
       'Entrada direta em Direitos e Notícias; Minha Sala de Aula somente no cabeçalho, guia e histórico somente em Transparência.',
       'Aceite de termos no primeiro clique, em diálogo de rodapé, salvo só no navegador; termos apresentados em cascata e removidos da busca.',

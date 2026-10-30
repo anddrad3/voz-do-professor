@@ -4,6 +4,10 @@ Site publicado: [Voz do Professor](https://amerindia.alwaysdata.net/voz-do-profe
 
 Plataforma de informação docente com cards adaptativos, temas claro/escuro, catálogo público e administração privada. Versão 3: **sem contas de visitantes, sem upload e sem coleta de relatos ou respostas no servidor**.
 
+## Versão 3.3.1
+
+O controle Menu mantém posição e tamanho ao abrir e recolher. O histórico público se chama Estatísticas para Nerds; o histórico completo do proprietário usa cards em cascata. Navegação e retorno têm transições de saída e entrada, com ampliação suave ao passar o mouse e respeito a movimento reduzido.
+
 ## Versão 3.3
 
 Menu compacto com rolagem circular e cabeçalho menor, preservando a logo. Entrada em Direitos e Notícias, aceite local dos termos no primeiro clique e filtros de IA recolhíveis. Minha Sala de Aula fica no cabeçalho; guia, termos e o histórico resumido ficam em Transparência. O editor de foto permite arrastar, ampliar e recortar. O painel privado inclui os 66 requisitos originais e explica mudanças de escopo. Fotos de relatos são anexadas por e-mail, conforme o PDF. Veja [segurança e limites](docs/seguranca.md).

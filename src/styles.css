@@ -1300,7 +1300,7 @@ main[data-view='list'] .masonry .card-footer {
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
   .masonry .card:hover,
   .detail-masonry .card:hover {
-    transform: translateY(-4px) scale(1.012);
+    transform: translateY(-3px);
     box-shadow: 0 16px 38px #0002;
     border-color: color-mix(in srgb, var(--red) 45%, var(--line));
   }
@@ -1520,23 +1520,29 @@ main[data-view='list'] .masonry > .card {
   border: 0;
   padding-block: 8px;
 }
-.menu-toggle {
-  flex-shrink: 0;
-}
-.menu-toggle[aria-expanded='true'] {
-  background: transparent;
+/* One fixed control for both states: the pills expand beside it. */
+.menu-toggle,
+.menu-toggle.button.small {
+  flex: 0 0 72px;
+  width: 72px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0 8px;
+  gap: 5px;
   border-color: transparent;
-  width: 32px;
-  min-height: 36px;
-  padding: 0;
+  background: transparent;
   color: var(--muted);
+  line-height: 1;
 }
-.menu-toggle[aria-expanded='true'] .menu-label {
-  display: none;
+.menu-toggle:hover {
+  background: var(--soft);
+  color: var(--text);
 }
 .menu-control .menu-chevron {
-  display: inline-block;
-  font-size: 20px;
+  display: block;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
   transition: transform 0.25s ease;
 }
 .menu-control button[aria-expanded='false'] .menu-chevron {
@@ -1966,4 +1972,41 @@ main[data-view='list'] .masonry > .card {
   clip-path: inset(50%);
   white-space: nowrap;
   border: 0;
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .card:hover {
+    scale: 1.012;
+    box-shadow: 0 12px 32px #0002;
+    border-color: color-mix(in srgb, var(--red) 35%, var(--line));
+  }
+  :is(.button, .icon-button, .nav-link, .chip, .account-link, summary):hover {
+    scale: 1.045;
+  }
+  :is(.button, .icon-button, .nav-link, .chip, .account-link, summary, .card) {
+    transition:
+      scale 0.22s ease,
+      background 0.22s ease,
+      color 0.22s ease,
+      border-color 0.22s ease,
+      box-shadow 0.22s ease;
+  }
+  .menu-toggle:hover {
+    scale: 1.025;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .nav-link.active,
+  .chip.active {
+    animation: pill-select 0.32s ease-out;
+  }
+  @keyframes pill-select {
+    from {
+      opacity: 0.45;
+    }
+    to {
+      opacity: 1;
+    }
+  }
 }

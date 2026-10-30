@@ -3,7 +3,7 @@ import { installPhotoEditor } from './modules/photo-editor.js';
 import { versionsPage } from './modules/versions.js';
 import { termsPage } from './modules/transparency.js';
 import { greeting } from './modules/personalization.js';
-import { installMotion, animateContent } from './modules/motion.js';
+import { installMotion, animateContent, leaveContent } from './modules/motion.js';
 import { enhanceNavigation, toggleMenu } from './modules/navigation.js';
 import { locateForm } from './modules/location.js';
 import './styles.css';
@@ -66,7 +66,7 @@ const route = () => {
   } catch {}
   return { area: area || 'direitos', id };
 };
-async function render() {
+async function render({ direction = 1, resetScroll = false } = {}) {
   const revision = ++version;
   const { area, id } = route();
   if (state.map) {
@@ -167,6 +167,9 @@ async function render() {
           output = empty('Página não encontrada');
       }
     if (revision !== version) return;
+    await leaveContent(main, direction);
+    if (revision !== version) return;
+    if (resetScroll) window.scrollTo({ top: 0, behavior: 'instant' });
     main.innerHTML =
       (any && area !== 'direitos' && !output.includes('data-action="back"')
         ? `<a href="#/direitos" class="button ghost small page-back" data-action="back">${icon('arrow-left')}Voltar</a>`
@@ -186,7 +189,7 @@ async function render() {
     hydrateSavedChats(main);
     arrangeCards();
     enhanceNavigation();
-    if (output) animateContent(main);
+    if (output) animateContent(main, direction);
     document.title =
       (nav.find((n) => n[0] === area)?.[1] ||
         (area === 'termos' ? 'Termos e Condições' : 'Publicação')) + ' · Voz do Professor';
@@ -463,12 +466,12 @@ document.addEventListener('change', (e) => {
 });
 window.addEventListener('hashchange', () => {
   const current = location.hash || '#/direitos';
-  if (routeTrail.at(-2) === current) routeTrail.pop();
+  const backwards = routeTrail.at(-2) === current;
+  if (backwards) routeTrail.pop();
   else if (routeTrail.at(-1) !== current) routeTrail.push(current);
   if (routeTrail.length > 60) routeTrail.shift();
   document.querySelector('#dialog').close();
-  window.scrollTo(0, 0);
-  void render();
+  void render({ direction: backwards ? -1 : 1, resetScroll: true });
 });
 window.addEventListener('pagehide', () => window.speechSynthesis?.cancel());
 window.addEventListener('storage', (e) => {
