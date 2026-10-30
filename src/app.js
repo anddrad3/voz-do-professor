@@ -5,6 +5,7 @@ import { termsPage } from './modules/transparency.js';
 import { greeting } from './modules/personalization.js';
 import { installMotion, animateContent, leaveContent } from './modules/motion.js';
 import { enhanceNavigation, toggleMenu } from './modules/navigation.js';
+import { renderMobileNavigation } from './modules/mobile-navigation.js';
 import { locateForm } from './modules/location.js';
 import './styles.css';
 import {
@@ -78,7 +79,7 @@ async function render({ direction = 1, resetScroll = false } = {}) {
   if (revision !== version) return;
   const any = Object.values(state.config.features).some(Boolean);
   const navigation = document.querySelector('#navigation');
-  navigation.innerHTML = any
+  const menuItems = any
     ? nav
         .filter((n) => !['inicio', 'perfil', 'versoes'].includes(n[0]))
         .filter(
@@ -87,12 +88,14 @@ async function render({ direction = 1, resetScroll = false } = {}) {
             enabled(n[3]) ||
             (n[0] === 'perfil' && (enabled('favorites') || enabled('alerts'))),
         )
-        .map(
-          ([k, label, ico]) =>
-            `<a class="nav-link ${k === area ? 'active' : ''}" href="#/${k}" ${k === area ? 'aria-current="page"' : ''}>${icon(ico)}${label}</a>`,
-        )
-        .join('')
-    : '';
+    : [];
+  renderMobileNavigation(menuItems, area);
+  navigation.innerHTML = menuItems
+    .map(
+      ([k, label, ico]) =>
+        `<a class="nav-link ${k === area ? 'active' : ''}" href="#/${k}" ${k === area ? 'aria-current="page"' : ''}>${icon(ico)}${label}</a>`,
+    )
+    .join('');
   document.querySelector('[data-action="search"]').hidden = !enabled('search');
   document.querySelector('#account-link').hidden =
     !enabled('preferences') && !enabled('favorites') && !enabled('alerts');

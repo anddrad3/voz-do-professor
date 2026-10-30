@@ -1,11 +1,24 @@
 // Friendly version labels assigned to the actual Git milestones; these are not Git tags.
-export const PLATFORM_VERSION = '3.3.1';
+export const PLATFORM_VERSION = '3.4.0';
 export const RELEASES = [
   {
     version: PLATFORM_VERSION,
     date: '2026-10-30',
     status: 'Publicada',
     commits: [],
+    title: 'Navegação mobile no estilo de aplicativos',
+    changes: [
+      'No celular, barra inferior fixa com atalhos para Notícias, Vagas, Concursos e Relatos; Mais abre Radar, Estatísticas e Transparência em um painel deslizante.',
+      'Área atual destacada, alvos de toque amplos, suporte ao tema claro/escuro e espaço reservado para a área segura do aparelho.',
+      'Painel acessível pelo teclado, com fechamento por botão, fundo e Escape. Transições respeitam movimento reduzido.',
+      'Ferramentas desativadas não aparecem nos atalhos. Minha Sala de Aula permanece no cabeçalho e a navegação desktop conserva suas pílulas.',
+    ],
+  },
+  {
+    version: '3.3.1',
+    date: '2026-10-30',
+    status: 'Publicada',
+    commits: ['bb3879d'],
     title: 'Menu estável, histórico em cascata e transições',
     changes: [
       'Menu compacto permanece no mesmo lugar ao abrir e recolher, com seta vetorial alinhada ao texto; histórico resumido acessível como Estatísticas para Nerds em Transparência.',
